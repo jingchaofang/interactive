@@ -54,7 +54,7 @@ var mySwiper = new Swiper('.swiper-container', {
 Let's look on list of all available parameters:
 
 |Parameter|Type|Default|Description|
-|:-------=|:---|:------|:----------|
+|:-------|:---|:------|:-----------|
 |initialSlide|number|0|Index number of initial slide.设定初始化时slide的索引|
 |direction|string|'horizontal'|Could be 'horizontal' or 'vertical' (for vertical slider).|
 |speed|number|300|Duration of transition between slides (in ms)|
