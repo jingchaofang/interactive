@@ -17,7 +17,7 @@
   margin-right: auto;
   position: relative;
   overflow: hidden;
-  /* Fix of Webkit flickering */
+  /* Fix of Webkit flickering 修复Webkit闪烁*/
   z-index: 1;
 }
 .swiper-container-no-flexbox .swiper-slide {
