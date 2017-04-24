@@ -1,6 +1,8 @@
-#Swiper API
+Swiper API
+==========
 
-##Swiper Full HTML Layout
+Swiper Full HTML Layout
+----------------------
 ```html
 <!-- Slider main container -->
 <div class="swiper-container">
@@ -24,8 +26,8 @@
 </div>
 ```
 
-##Initialize Swiper 初始化
-
+Initialize Swiper 初始化
+------------------------
 Now, when we have Swiper's HTML, we need to initialize it using the following function:
 
 ```
@@ -49,8 +51,8 @@ var mySwiper = new Swiper('.swiper-container', {
 });
 ```
 
-##Swiper Parameters
-
+Swiper Parameters
+-----------------
 Let's look on list of all available parameters:
 
 |Parameter|Type|Default|Description|
@@ -58,6 +60,9 @@ Let's look on list of all available parameters:
 |initialSlide|number|0|Index number of initial slide.设定初始化时slide的索引|
 |direction|string|'horizontal'|Could be 'horizontal' or 'vertical' (for vertical slider).|
 |speed|number|300|Duration of transition between slides (in ms)|
+|setWrapperSize|boolean|false|Enabled this option and plugin will set width/height on swiper wrapper equal to total size of all slides. Mostly should be used as compatibility fallback option for browser that don't support flexbox layout well|
+
+
 
 
 
