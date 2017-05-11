@@ -2,15 +2,15 @@
  * Swiper 3.4.2
  * Most modern mobile touch slider and framework with hardware accelerated transitions
  * 最新的移动触摸滑块和硬件加速过渡框架
- * 
+ *
  * http://www.idangero.us/swiper/
- * 
+ *
  * Copyright 2017, Vladimir Kharlampidi
  * The iDangero.us
  * http://www.idangero.us/
- * 
+ *
  * Licensed under MIT
- * 
+ *
  * Released on: March 10, 2017
  */
 (function () {
@@ -20,7 +20,7 @@
     /*===========================
     Swiper
     ===========================*/
- 
+
     var Swiper = function (container, params) {
         // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Operators/instanceof
         // instanceof 运算符用来检测 constructor.prototype 是否存在于参数 object 的原型链上
@@ -29,7 +29,8 @@
 
         // 默认配置项
         var defaults = {
-            // Could be 'horizontal' or 'vertical' (for vertical slider).
+            // Slides的滑动方向，可设置水平(horizontal)或垂直(vertical)。
+            // http://www.swiper.com.cn/api/basic/2014/1215/21.html
             direction: 'horizontal',
             touchEventsTarget: 'container',
             initialSlide: 0, // Index number of initial slide
@@ -42,22 +43,44 @@
             iOSEdgeSwipeDetection: false,
             iOSEdgeSwipeThreshold: 20,
             // Free mode
+            // 默认为false，普通模式：slide滑动时只滑动一格，并自动贴合wrapper，设置为true则变为free模式，slide会根据惯性滑动且不会贴合。
+            // http://www.swiper.com.cn/api/freemode/2014/1217/44.html
             freeMode: false,
+            // free模式动量。free模式下，若设置为false则关闭动量，释放slide之后立即停止不会滑动。
             freeModeMomentum: true,
+            // free模式动量值（移动惯量）。设置的值越大，当释放slide时的滑动距离越大。
             freeModeMomentumRatio: 1,
+            // 动量反弹。false时禁用free模式下的动量反弹，slides通过惯性滑动到边缘时，无法反弹。注意与resistance（手动抵抗）区分。
             freeModeMomentumBounce: true,
+            // 值越大产生的边界反弹效果越明显，反弹距离越大。
             freeModeMomentumBounceRatio: 1,
+            // free模式惯性速度，设置越大，释放后滑得越快。
             freeModeMomentumVelocityRatio: 1,
+            // 使得freeMode也能自动贴合
             freeModeSticky: false,
+            // 最小速度
             freeModeMinimumVelocity: 0.02,
-            // Autoheight
+            // Autoheight 自动高度。设置为true时，wrapper和container会随着当前slide的高度而发生变化
             autoHeight: false,
+            // 用于嵌套相同方向的swiper时，当切换到子swiper时停止父swiper的切换。
+            // 请将子swiper的nested设置为true。
+            // 由于需要在slideChangeEnd时判断作用块，因此快速滑动时这个选项无效。
+            nested: fase,
             // Set wrapper width
             setWrapperSize: false,
-            // Virtual Translate
+            // Virtual Translate 虚拟位移
+            // 当你启用这个参数，Swiper除了不会移动外其他的都像平时一样运行，仅仅是不会在Wrapper上设置位移。
+            // 当你想自定义一些slide切换效果时可以用。启用这个选项时onSlideChange和onTransition事件失效。
             virtualTranslate: false,
             // Effects
+            // slide的切换效果，默认为"slide"（位移切换），可设置为"fade"（淡入）"cube"（方块）"coverflow"（3d流）"flip"（3d翻转）。
             effect: 'slide', // 'slide' or 'fade' or 'cube' or 'coverflow' or 'flip'
+            // coverflow是类似于苹果将多首歌曲的封面以3D界面的形式显示出来的方式。coverflow效果参数，可选值：
+            // rotate：slide做3d旋转时Y轴的旋转角度。默认50。
+            // stretch：每个slide之间的拉伸值，越大slide靠得越紧。 默认0。
+            // depth：slide的位置深度。值越大z轴距离越远，看起来越小。 默认100。
+            // modifier：depth和rotate和stretch的倍率，相当于depth*modifier、rotate*modifier、stretch*modifier，值越大这三个参数的效果越明显。默认1。
+            // slideShadows：开启slide阴影。默认 true。
             coverflow: {
                 rotate: 50,
                 stretch: 0,
@@ -65,30 +88,48 @@
                 modifier: 1,
                 slideShadows : true
             },
+            // 3d翻转有两个参数可设置。
+            // slideShadows：slides的阴影。默认true。
+            // limitRotation：限制最大旋转角度为180度，默认true。
             flip: {
                 slideShadows : true,
                 limitRotation: true
             },
+            // cube效果参数，可选值：
+            // slideShadows：开启slide阴影。默认 true。
+            // shadow：开启投影。默认 true。
+            // shadowOffset：投影距离。默认 20，单位px。
+            // shadowScale：投影缩放比例。默认0.94。
             cube: {
                 slideShadows: true,
                 shadow: true,
                 shadowOffset: 20,
                 shadowScale: 0.94
             },
+            // fade效果参数。可选参数：crossFade(3.03启用)，交叉淡入淡出。
+            // 默认：false。关闭淡出。过渡时，原slide透明度为1（不淡出），过渡中的slide透明度从0->1（淡入），其他slide透明度0。
+            // 可选值：true。开启淡出。过渡时，原slide透明度从1->0（淡出），过渡中的slide透明度从0->1（淡入），其他slide透明度0。
             fade: {
                 crossFade: false
             },
-            // Parallax
+            // Parallax 视觉差
+            // http://www.swiper.com.cn/api/basic/2015/0308/197.html
             parallax: false,
             // Zoom
             zoom: false,
             zoomMax: 3,
             zoomMin: 1,
             zoomToggle: true,
-            // Scrollbar
+            /**
+             * Scrollbar 滚动条
+             */
+            // Scrollbar容器的css选择器或HTML元素
             scrollbar: null,
+            // 滚动条是否自动隐藏。默认：true会自动隐藏
             scrollbarHide: true,
+            // 该参数设置为true时允许拖动滚动条
             scrollbarDraggable: false,
+            // 如果设置为true，释放滚动条时slide自动贴合
             scrollbarSnapOnRelease: false,
             // Keyboard Mousewheel
             keyboardControl: false,
@@ -106,57 +147,143 @@
             // Commong Nav State
             replaceState: false,
             // Breakpoints
+            // 断点设定：根据屏幕宽度设置某参数为不同的值，类似于响应式布局的media screen。
+            // 只有部分不需要变换布局方式和逻辑结构的参数支持断点设定，如slidesPerView、slidesPerGroup、spaceBetween，
+            // 而像slidesPerColumn、loop、direction、effect等则无效。
             breakpoints: undefined,
-            // Slides grid
+            // Slides grid slide之间的距离（单位px）
+            // http://www.swiper.com.cn/api/Slides_grid/2015/0308/198.html
             spaceBetween: 0,
+            // 设置slider容器能够同时显示的slides数量(carousel模式)。
+            // 可以设置为number或者 'auto'则自动根据slides的宽度来设定数量。
+            // loop模式下如果设置为'auto'还需要设置另外一个参数loopedSlides。
+            // http://www.swiper.com.cn/api/Slides_grid/2014/1215/24.html
             slidesPerView: 1,
+            // 多行布局里面每列的slide数量
             slidesPerColumn: 1,
+            /**
+             * 多行布局中以什么形式填充：
+             *  'column'（列）
+             *  1   3   5
+             *  2   4   6
+             *  'row'（行）
+             *  1   2   3
+             *  4   5   6
+             */
             slidesPerColumnFill: 'column',
+            // 在carousel mode下定义slides的数量多少为一组
+            // http://www.swiper.com.cn/api/Slides_grid/2014/1217/27.html
             slidesPerGroup: 1,
+            // 设定为true时，活动块会居中，而不是默认状态下的居左。
             centeredSlides: false,
+            // 设定slide与左边框的预设偏移量（单位px）
             slidesOffsetBefore: 0, // in px
+            // 设定slide与右边框的预设偏移量（单位px）
             slidesOffsetAfter: 0, // in px
             // Round length
+            // 设定为true将slide的宽和高取整(四舍五入)以防止某些分辨率的屏幕上文字或边界(border)模糊。
+            // 例如在1440宽度设备上，当你设定slide宽为76%时，则计算出来结果为1094.4，开启后宽度取整数1094。
             roundLengths: false,
-            // Touches
+            /**
+             * Touches 触发条件
+             */
+            // 触摸距离与slide滑动距离的比率
             touchRatio: 1,
+            // 允许触发拖动的角度值。默认45度，即使触摸方向不是完全水平也能拖动slide。
+            // http://www.swiper.com.cn/api/touch/2015/0308/201.html
             touchAngle: 45,
+            // 默认为true，Swiper接受鼠标点击、拖动。
+            // http://www.swiper.com.cn/api/touch/2014/1217/56.html
             simulateTouch: true,
+            // 设置为false时，进行快速短距离的拖动无法触发Swiper
             shortSwipes: true,
+            // 设置为false时，进行长时间长距离的拖动无法触发Swiper。
             longSwipes: true,
+            // 进行longSwipes时触发swiper所需要的最小拖动距离比例，即定义longSwipes距离比例。值越大触发Swiper所需距离越大。最大值0.5。
             longSwipesRatio: 0.5,
+            // 定义longSwipes的时间（单位ms），超过则属于longSwipes
             longSwipesMs: 300,
+            // 如设置为false，拖动slide时它不会动，当你释放时slide才会切换。
             followFinger: true,
+            // 值为true时，slide无法拖动，只能使用扩展API函数例如slideNext() 或slidePrev()或slideTo()等改变slides滑动。
             onlyExternal: false,
+            // 拖动的临界值（单位为px），如果触摸距离小于该值滑块不会被拖动。
             threshold: 0,
+            // true时阻止touchmove冒泡事件。
             touchMoveStopPropagation: true,
+            // 当滑动到Swiper的边缘时释放滑动，可以用于同向Swiper的嵌套（移动端触摸有效）。
             touchReleaseOnEdges: false,
             // Unique Navigation Elements
+            // 独立分页元素，当启用（默认）并且分页元素的传入值为字符串时，swiper会优先查找子元素匹配这些元素。可应用于分页器，按钮和滚动条。
+            // http://www.swiper.com.cn/api/pagination/2016/0219/307.html
             uniqueNavElements: true,
-            // Pagination
+            /**
+             * Pagination 分页器
+             */
+            // 分页器容器的css选择器或HTML标签。分页器等组件可以置于container之外，不同Swiper的组件应该有所区分，如#pagination1，#pagination2。
+            // http://www.swiper.com.cn/api/pagination/2014/1217/68.html
             pagination: null,
+            // 设定分页器指示器（小点）的HTML标签
             paginationElement: 'span',
+            // 此参数设置为true时，点击分页器的指示点分页器会控制Swiper切换
             paginationClickable: false,
+            // 默认分页器会一直显示。这个选项设置为true时点击Swiper会隐藏/显示分页器
             paginationHide: false,
+            // 渲染分页器小点。这个参数允许完全自定义分页器的指示点。接受指示点索引和指示点类名作为参数。
+            // http://www.swiper.com.cn/api/pagination/2014/1217/70.html
             paginationBulletRender: null,
+            // 自定义进度条类型分页器，当分页器类型设置为进度条时可用。
+            // http://www.swiper.com.cn/api/pagination/2016/0126/301.html
             paginationProgressRender: null,
+            // 自定义分式类型分页器，当分页器类型设置为分式时可用。
+            // http://www.swiper.com.cn/api/pagination/2016/0126/300.html
             paginationFractionRender: null,
+            // 自定义特殊类型分页器，当分页器类型设置为自定义时可用。
+            // http://www.swiper.com.cn/api/pagination/2016/0126/302.html
             paginationCustomRender: null,
+            // 分页器样式类型，可选
+            // ‘bullets’ 圆点（默认）
+            // ‘fraction’ 分式，数字页码
+            // ‘progress’ 进度条
+            // ‘custom’ 自定义
             paginationType: 'bullets', // 'bullets' or 'progress' or 'fraction' or 'custom'
-            // Resistance
+            /**
+             * resistance 抵抗性
+             */
+            // 边缘抵抗。当swiper已经处于第一个或最后一个slide时，继续拖动Swiper会离开边界，释放后弹回。边缘抵抗就是拖离边界时的抵抗力。
+            // 值为false时禁用，将slide拖离边缘时完全没有抗力。可以通过resistanceRatio设定抵抗力大小。
             resistance: true,
+            // 抵抗率。边缘抵抗力的大小比例。值越小抵抗越大越难将slide拖离边缘，0时完全无法拖离。
             resistanceRatio: 0.85,
-            // Next/prev buttons
+            /**
+             * Next/prev buttons 前进后退按钮
+             */
+            // 前进按钮的css选择器或HTML元素。
+            // http://www.swiper.com.cn/api/Navigation_Buttons/2015/0308/209.html
             nextButton: null,
+            // 后退按钮的css选择器或HTML元素。
             prevButton: null,
-            // Progress
+            // Progress 开启这个参数来计算每个slide的progress(进度、进程)，Swiper的progress无需设置即开启。
+            // http://www.swiper.com.cn/api/Progress/2015/0308/191.html
             watchSlidesProgress: false,
+            // 开启watchSlidesVisibility选项前需要先开启watchSlidesProgress，
+            // 如果开启了watchSlidesVisibility，则会在每个可见slide增加一个classname，默认为'swiper-slide-visible'。
+            // http://www.swiper.com.cn/api/Progress/2015/0308/192.html
             watchSlidesVisibility: false,
             // Cursor
+            // 设置为true时，鼠标覆盖Swiper时指针会变成手掌形状，拖动时指针会变成抓手形状。（根据浏览器形状有所不同）
             grabCursor: false,
-            // Clicks
+            /**
+             * Clicks 点击
+             */
+            // 当swiper在触摸时阻止默认事件（preventDefault），用于防止触摸时触发链接跳转。
+            // http://www.swiper.com.cn/api/Clicks/2014/1217/40.html
             preventClicks: true,
+            // 阻止click冒泡。拖动Swiper时阻止click事件。
+            // http://www.swiper.com.cn/api/Clicks/2014/1217/41.html
             preventClicksPropagation: true,
+            // 设置为true则点击slide会过渡到这个slide。
+            // http://www.swiper.com.cn/api/Clicks/2015/0308/207.html
             slideToClickedSlide: false,
             // Lazy Loading
             lazyLoading: false,
@@ -166,29 +293,52 @@
             // Images
             preloadImages: true,
             updateOnImagesReady: true,
-            // loop
+            /**
+             * loop 循环
+             */
+            // 设置为true 则开启loop循环模式。loop模式：会在原本slide前后复制若干个slide并在合适的时候切换，让Swiper看起来是循环的。
+            // loop模式在与free模式同用时会产生抖动，因为free模式下没有复制slide的时间点。
             loop: false,
+            // loop模式下会在slides前后复制若干个slide,，前后复制的个数不会大于原总个数。
+            // 默认为0，前后各复制1个。0,1,2 --> 2,0,1,2,0
+            // 例：取值为1，0,1,2 --> 1,2,0,1,2,0,1
+            // 例：取值为2或以上，0,1,2 --> 0,1,2,0,1,2,0,1,2
             loopAdditionalSlides: 0,
+            // 在loop模式下使用slidesPerview:'auto',还需使用该参数设置所要用到的loop个数。
             loopedSlides: null,
             // Control
             control: undefined,
             controlInverse: false,
             controlBy: 'slide', //or 'container'
             normalizeSlideIndex: true,
-            // Swiping/no swiping
+            /**
+             * Swiping/no swiping 禁止切换
+             */
+            // 设为false可禁止向左或上滑动。作用类似mySwiper.lockSwipeToPrev()
             allowSwipeToPrev: true,
+            // 设置为false可禁止向右或下滑动。作用类似mySwiper.lockSwipeToNext()
             allowSwipeToNext: true,
+            // CSS选择器或者HTML元素。你只能拖动它进行swiping。
             swipeHandler: null, //'.swipe-handler',
+            // 设为true时，可以在slide上（或其他元素）增加类名'swiper-no-swiping'，使该slide无法拖动，希望文字被选中时可以考虑使用。
+            // 该类名可通过noSwipingClass修改。
             noSwiping: true,
+            // 不可拖动块的类名，当noSwiping设置为true时，并且在slide加上此类名，slide无法拖动。
             noSwipingClass: 'swiper-no-swiping',
             // Passive Listeners
+            // 用来提升swiper在移动设备的中的scroll表现（Passive Event Listeners），
+            // 但是会和e.preventDefault冲突，所以有时候你需要关掉它。默认true，开启。
+            // https://developer.mozilla.org/zh-CN/docs/Web/API/EventTarget/addEventListener
+            // https://zhuanlan.zhihu.com/p/24555031
             passiveListeners: true,
-            // NS
+            // NS 容器可修改样式类
             containerModifierClass: 'swiper-container-', // NEW
+            // slide样式标识
             slideClass: 'swiper-slide',
             slideActiveClass: 'swiper-slide-active',
             slideDuplicateActiveClass: 'swiper-slide-duplicate-active',
             slideVisibleClass: 'swiper-slide-visible',
+            // 复制的slide的样式标识
             slideDuplicateClass: 'swiper-slide-duplicate',
             slideNextClass: 'swiper-slide-next',
             slideDuplicateNextClass: 'swiper-slide-duplicate-next',
@@ -211,11 +361,13 @@
             notificationClass: 'swiper-notification',
             preloaderClass: 'preloader',
             zoomContainerClass: 'swiper-zoom-container',
-        
+
             // Observer
             observer: false,
             observeParents: false,
             // Accessibility
+            // 辅助，无障碍阅读。开启本参数为屏幕阅读器添加语音提示等信息，方便视觉障碍者。基于ARIA标准。
+            // http://www.swiper.com.cn/api/basic/2015/0328/268.html
             a11y: false,
             prevSlideMessage: 'Previous slide',
             nextSlideMessage: 'Next slide',
@@ -254,15 +406,24 @@
             onLazyImageReady: function (swiper, slide, image)
             onKeyPress: function (swiper, keyCode)
             */
-        
+
         };
-        // 
+        // 初始化虚拟位移状态
         var initialVirtualTranslate = params && params.virtualTranslate;
-        
+
         params = params || {};
+        // 保存原始所传参数对象
         var originalParams = {};
+        // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Statements/for...in
         for (var param in params) {
-            if (typeof params[param] === 'object' && params[param] !== null && !(params[param].nodeType || params[param] === window || params[param] === document || (typeof Dom7 !== 'undefined' && params[param] instanceof Dom7) || (typeof jQuery !== 'undefined' && params[param] instanceof jQuery))) {
+            // https://developer.mozilla.org/zh-CN/docs/Web/API/Node/nodeType
+            // 参数为对象深一层次
+            if (typeof params[param] === 'object' && params[param] !== null && !(params[param].nodeType
+                || params[param] === window
+                || params[param] === document
+                || (typeof Dom7 !== 'undefined' && params[param] instanceof Dom7)
+                || (typeof jQuery !== 'undefined' && params[param] instanceof jQuery))
+            ) {
                 originalParams[param] = {};
                 for (var deepParam in params[param]) {
                     originalParams[param][deepParam] = params[param][deepParam];
@@ -272,6 +433,7 @@
                 originalParams[param] = params[param];
             }
         }
+        // 未传参项默认参数
         for (var def in defaults) {
             if (typeof params[def] === 'undefined') {
                 params[def] = defaults[def];
@@ -284,20 +446,21 @@
                 }
             }
         }
-        
-        // Swiper
+
+        // Swiper 简写
         var s = this;
-        
-        // Params
+
+        // Params 填补了未传参默认项的所有参数
         s.params = params;
+        // 原始所传参数，没有填补未传参默认项
         s.originalParams = originalParams;
-        
-        // Classname
+
+        // Classname 样式类名
         s.classNames = [];
         /*=========================
-          Dom Library and plugins
+          Dom Library and plugins 操作Dom类，优先使用Dom7
           ===========================*/
-        if (typeof $ !== 'undefined' && typeof Dom7 !== 'undefined'){
+        if (typeof $ !== 'undefined' && typeof Dom7 !== 'undefined') {
             $ = Dom7;
         }
         if (typeof $ === 'undefined') {
@@ -309,11 +472,38 @@
             }
             if (!$) return;
         }
-        // Export it to Swiper instance
+        // Export it to Swiper instance 导出给Swiper实例对象
         s.$ = $;
-        
+
         /*=========================
           Breakpoints
+          断点设定：根据屏幕宽度设置某参数为不同的值，类似于响应式布局的media screen。
+          只有部分不需要变换布局方式和逻辑结构的参数支持断点设定，如slidesPerView、slidesPerGroup、spaceBetween，
+          而像slidesPerColumn、loop、direction、effect等则无效。
+          <script>
+            var swiper = new Swiper('.swiper-container', {
+              slidesPerView: 4,
+              spaceBetween: 40,
+
+              breakpoints: {
+                //当宽度小于等于320
+                320: {
+                  slidesPerView: 1,
+                  spaceBetweenSlides: 10
+                },
+               //当宽度小于等于480
+                480: {
+                  slidesPerView: 2,
+                  spaceBetweenSlides: 20
+                },
+                //当宽度小于等于640
+                640: {
+                  slidesPerView: 3,
+                  spaceBetweenSlides: 30
+                }
+              }
+            })
+            </script>
           ===========================*/
         s.currentBreakpoint = undefined;
         s.getActiveBreakpoint = function () {
@@ -322,10 +512,13 @@
             var breakpoint = false;
             var points = [], point;
             for ( point in s.params.breakpoints ) {
+                // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Object/hasOwnProperty
                 if (s.params.breakpoints.hasOwnProperty(point)) {
                     points.push(point);
                 }
             }
+            // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Array/sort
+            // 升序
             points.sort(function (a, b) {
                 return parseInt(a, 10) > parseInt(b, 10);
             });
@@ -356,7 +549,7 @@
         if (s.params.breakpoints) {
             s.setBreakpoint();
         }
-        
+
         /*=========================
           Preparation - Define Container, Wrapper and Pagination
           ===========================*/
@@ -370,18 +563,19 @@
             });
             return swipers;
         }
-        
+
         // Save instance in container HTML Element and in data
         s.container[0].swiper = s;
         s.container.data('swiper', s);
-        
+
         s.classNames.push(s.params.containerModifierClass + s.params.direction);
-        
+        // free模式，惯性模式
         if (s.params.freeMode) {
             s.classNames.push(s.params.containerModifierClass + 'free-mode');
         }
         if (!s.support.flexbox) {
             s.classNames.push(s.params.containerModifierClass + 'no-flexbox');
+            // 多行布局里面每列的slide数量
             s.params.slidesPerColumn = 1;
         }
         if (s.params.autoHeight) {
@@ -393,9 +587,12 @@
         }
         // Max resistance when touchReleaseOnEdges
         if (s.params.touchReleaseOnEdges) {
+            // 抵抗率。边缘抵抗力的大小比例。值越小抵抗越大越难将slide拖离边缘，0时完全无法拖离。
             s.params.resistanceRatio = 0;
         }
         // Coverflow / 3D
+        // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Array/indexOf
+        // indexOf()方法返回在数组中可以找到给定元素的第一个索引，如果不存在，则返回-1
         if (['cube', 'coverflow', 'flip'].indexOf(s.params.effect) >= 0) {
             if (s.support.transforms3d) {
                 s.params.watchSlidesProgress = true;
@@ -427,22 +624,22 @@
                 s.params.virtualTranslate = true;
             }
         }
-        
-        // Grab Cursor
+
+        // Grab Cursor 捕获光标手势图标
         if (s.params.grabCursor && s.support.touch) {
             s.params.grabCursor = false;
         }
-        
-        // Wrapper
+
+        // Wrapper 包裹，包装器
         s.wrapper = s.container.children('.' + s.params.wrapperClass);
-        
-        // Pagination
+
+        // Pagination 分页器
         if (s.params.pagination) {
             s.paginationContainer = $(s.params.pagination);
             if (s.params.uniqueNavElements && typeof s.params.pagination === 'string' && s.paginationContainer.length > 1 && s.container.find(s.params.pagination).length === 1) {
                 s.paginationContainer = s.container.find(s.params.pagination);
             }
-        
+
             if (s.params.paginationType === 'bullets' && s.params.paginationClickable) {
                 s.paginationContainer.addClass(s.params.paginationModifierClass + 'clickable');
             }
@@ -451,7 +648,7 @@
             }
             s.paginationContainer.addClass(s.params.paginationModifierClass + s.params.paginationType);
         }
-        // Next/Prev Buttons
+        // Next/Prev Buttons 前进后退按钮
         if (s.params.nextButton || s.params.prevButton) {
             if (s.params.nextButton) {
                 s.nextButton = $(s.params.nextButton);
@@ -466,49 +663,51 @@
                 }
             }
         }
-        
-        // Is Horizontal
+
+        // Is Horizontal 是否水平切换
         s.isHorizontal = function () {
             return s.params.direction === 'horizontal';
         };
         // s.isH = isH;
-        
+
         // RTL
+        // https://developer.mozilla.org/zh-CN/docs/Web/HTML/Global_attributes/dir
         s.rtl = s.isHorizontal() && (s.container[0].dir.toLowerCase() === 'rtl' || s.container.css('direction') === 'rtl');
         if (s.rtl) {
             s.classNames.push(s.params.containerModifierClass + 'rtl');
         }
-        
+
         // Wrong RTL support
         if (s.rtl) {
             s.wrongRTL = s.wrapper.css('display') === '-webkit-box';
         }
-        
+
         // Columns
         if (s.params.slidesPerColumn > 1) {
             s.classNames.push(s.params.containerModifierClass + 'multirow');
         }
-        
+
         // Check for Android
         if (s.device.android) {
             s.classNames.push(s.params.containerModifierClass + 'android');
         }
-        
-        // Add classes
+
+        // Add classes 统一添加样式类
         s.container.addClass(s.classNames.join(' '));
-        
+
         // Translate
         s.translate = 0;
-        
+
         // Progress
         s.progress = 0;
-        
+
         // Velocity
         s.velocity = 0;
-        
+
         /*=========================
           Locks, unlocks
           ===========================*/
+        // 锁定Swiper的向右或下滑动。可以使用 mySwiper.unlockSwipeToNext() 解锁。作用类似allowSwipeToNext
         s.lockSwipeToNext = function () {
             s.params.allowSwipeToNext = false;
             if (s.params.allowSwipeToPrev === false && s.params.grabCursor) {
@@ -541,17 +740,20 @@
             s.params.allowSwipeToNext = s.params.allowSwipeToPrev = true;
             if (s.params.grabCursor) s.setGrabCursor();
         };
-        
+
         /*=========================
-          Round helper
+          Round helper 四舍五入，可是这里采用的函数不对，待向作者提issue
           ===========================*/
         function round(a) {
+            // 向下取整
+            // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Math/floor
             return Math.floor(a);
         }
         /*=========================
-          Set grab cursor
+          Set grab cursor 设置捕获手势光标
           ===========================*/
         s.setGrabCursor = function(moving) {
+            // https://developer.mozilla.org/zh-CN/docs/Web/CSS/cursor
             s.container[0].style.cursor = 'move';
             s.container[0].style.cursor = moving ? '-webkit-grabbing' : '-webkit-grab';
             s.container[0].style.cursor = moving ? '-moz-grabbin' : '-moz-grab';
@@ -568,7 +770,7 @@
           ===========================*/
         s.imagesToLoad = [];
         s.imagesLoaded = 0;
-        
+
         s.loadImage = function (imgElement, src, srcset, sizes, checkForComplete, callback) {
             var image;
             function onReady () {
@@ -591,7 +793,7 @@
                 } else {
                     onReady();
                 }
-        
+
             } else {//image already loaded...
                 onReady();
             }
@@ -610,7 +812,7 @@
                 s.loadImage(s.imagesToLoad[i], (s.imagesToLoad[i].currentSrc || s.imagesToLoad[i].getAttribute('src')), (s.imagesToLoad[i].srcset || s.imagesToLoad[i].getAttribute('srcset')), s.imagesToLoad[i].sizes || s.imagesToLoad[i].getAttribute('sizes'), true, _onReady);
             }
         };
-        
+
         /*=========================
           Autoplay
           ===========================*/
@@ -698,7 +900,7 @@
             var activeSlides = [];
             var newHeight = 0;
             var i;
-        
+
             // Find slides currently in view
             if(s.params.slidesPerView !== 'auto' && s.params.slidesPerView > 1) {
                 for (i = 0; i < Math.ceil(s.params.slidesPerView); i++) {
@@ -709,7 +911,7 @@
             } else {
                 activeSlides.push(s.slides.eq(s.activeIndex)[0]);
             }
-        
+
             // Find new height from heighest slide in view
             for (i = 0; i < activeSlides.length; i++) {
                 if (typeof activeSlides[i] !== 'undefined') {
@@ -717,10 +919,11 @@
                     newHeight = height > newHeight ? height : newHeight;
                 }
             }
-        
+
             // Update Height
             if (newHeight) s.wrapper.css('height', newHeight + 'px');
         };
+        // 更新container尺寸
         s.updateContainerSize = function () {
             var width, height;
             if (typeof s.params.width !== 'undefined') {
@@ -738,65 +941,78 @@
             if (width === 0 && s.isHorizontal() || height === 0 && !s.isHorizontal()) {
                 return;
             }
-        
-            //Subtract paddings
+
+            //Subtract paddings 减去内边距
             width = width - parseInt(s.container.css('padding-left'), 10) - parseInt(s.container.css('padding-right'), 10);
             height = height - parseInt(s.container.css('padding-top'), 10) - parseInt(s.container.css('padding-bottom'), 10);
-        
-            // Store values
+
+            // Store values 存值
             s.width = width;
             s.height = height;
             s.size = s.isHorizontal() ? s.width : s.height;
         };
-        
+        // 更新slider项尺寸
         s.updateSlidesSize = function () {
             s.slides = s.wrapper.children('.' + s.params.slideClass);
+            // 捕获的栅格
             s.snapGrid = [];
+            // slides栅格
             s.slidesGrid = [];
+            // slidesSizes栅格
             s.slidesSizesGrid = [];
-        
-            var spaceBetween = s.params.spaceBetween,
-                slidePosition = -s.params.slidesOffsetBefore,
-                i,
-                prevSlideSize = 0,
+            // slide间距、slide与左边框的预设偏移量（单位px）、i、保存前一个slide尺寸、indez
+            var spaceBetween = s.params.spaceBetween;
+            var slidePosition = -s.params.slidesOffsetBefore;
+            var i;
+            var prevSlideSize = 0,
                 index = 0;
             if (typeof s.size === 'undefined') return;
+            // 处理百分比传值为数字
             if (typeof spaceBetween === 'string' && spaceBetween.indexOf('%') >= 0) {
                 spaceBetween = parseFloat(spaceBetween.replace('%', '')) / 100 * s.size;
             }
-        
+            // virtualSize
             s.virtualSize = -spaceBetween;
-            // reset margins
+            // reset margins 重置外边距
             if (s.rtl) s.slides.css({marginLeft: '', marginTop: ''});
             else s.slides.css({marginRight: '', marginBottom: ''});
-        
+            // 填满最后一行后的幻灯片总数或布局能容纳slider个数(偶数或奇数)
             var slidesNumberEvenToRows;
             if (s.params.slidesPerColumn > 1) {
+                // Math.floor()向下取整
                 if (Math.floor(s.slides.length / s.params.slidesPerColumn) === s.slides.length / s.params.slidesPerColumn) {
                     slidesNumberEvenToRows = s.slides.length;
                 }
                 else {
+                    // Math.ceil()向上取整
                     slidesNumberEvenToRows = Math.ceil(s.slides.length / s.params.slidesPerColumn) * s.params.slidesPerColumn;
                 }
+
                 if (s.params.slidesPerView !== 'auto' && s.params.slidesPerColumnFill === 'row') {
+                    // Math.max()函数返回一组数中的最大值。
                     slidesNumberEvenToRows = Math.max(slidesNumberEvenToRows, s.params.slidesPerView * s.params.slidesPerColumn);
                 }
             }
-        
+
             // Calc slides
-            var slideSize;
-            var slidesPerColumn = s.params.slidesPerColumn;
+            var slideSize; // slide度量大小，水平滑动为宽度，垂直滑动为高度
+            var slidesPerColumn = s.params.slidesPerColumn; // 设定的每列能容纳slider个数
+            // 这里是布局能容纳的每行slider数，因为slidesNumberEvenToRows的调整，这里始终是整数
             var slidesPerRow = slidesNumberEvenToRows / slidesPerColumn;
+            // 实际最后一行的slider个数
             var numFullColumns = slidesPerRow - (s.params.slidesPerColumn * slidesPerRow - s.slides.length);
             for (i = 0; i < s.slides.length; i++) {
                 slideSize = 0;
                 var slide = s.slides.eq(i);
                 if (s.params.slidesPerColumn > 1) {
-                    // Set slides order
+                    // Set slides order 设置顺序
                     var newSlideOrderIndex;
                     var column, row;
+                    // 按列的顺序走
                     if (s.params.slidesPerColumnFill === 'column') {
+                        // Math.floor()向下取整
                         column = Math.floor(i / slidesPerColumn);
+
                         row = i - column * slidesPerColumn;
                         if (column > numFullColumns || (column === numFullColumns && row === slidesPerColumn-1)) {
                             if (++row >= slidesPerColumn) {
@@ -804,6 +1020,7 @@
                                 column++;
                             }
                         }
+                        // 新的顺序索引 newSlideOrderIndex = column + row * (slidesNumberEvenToRows / slidesPerColumn);
                         newSlideOrderIndex = column + row * slidesNumberEvenToRows / slidesPerColumn;
                         slide
                             .css({
@@ -815,9 +1032,11 @@
                             });
                     }
                     else {
+                        // Math.floor()向下取整
                         row = Math.floor(i / slidesPerRow);
                         column = i - row * slidesPerRow;
                     }
+                    // 照顾其他间距
                     slide
                         .css(
                             'margin-' + (s.isHorizontal() ? 'top' : 'left'),
@@ -825,17 +1044,18 @@
                         )
                         .attr('data-swiper-column', column)
                         .attr('data-swiper-row', row);
-        
+
                 }
                 if (slide.css('display') === 'none') continue;
                 if (s.params.slidesPerView === 'auto') {
+                    // slide大小 左右外边距+offsetWidth 或 上下外边距+offsetHeight
                     slideSize = s.isHorizontal() ? slide.outerWidth(true) : slide.outerHeight(true);
                     if (s.params.roundLengths) slideSize = round(slideSize);
                 }
                 else {
                     slideSize = (s.size - (s.params.slidesPerView - 1) * spaceBetween) / s.params.slidesPerView;
                     if (s.params.roundLengths) slideSize = round(slideSize);
-        
+
                     if (s.isHorizontal()) {
                         s.slides[i].style.width = slideSize + 'px';
                     }
@@ -845,54 +1065,79 @@
                 }
                 s.slides[i].swiperSlideSize = slideSize;
                 s.slidesSizesGrid.push(slideSize);
-        
-        
+
+                // 如果活动块居中
                 if (s.params.centeredSlides) {
                     slidePosition = slidePosition + slideSize / 2 + prevSlideSize / 2 + spaceBetween;
-                    if(prevSlideSize === 0 && i !== 0) slidePosition = slidePosition - s.size / 2 - spaceBetween;
-                    if (i === 0) slidePosition = slidePosition - s.size / 2 - spaceBetween;
-                    if (Math.abs(slidePosition) < 1 / 1000) slidePosition = 0;
-                    if ((index) % s.params.slidesPerGroup === 0) s.snapGrid.push(slidePosition);
+                    if(prevSlideSize === 0 && i !== 0) {
+                        slidePosition = slidePosition - s.size / 2 - spaceBetween;
+                    }
+                    if (i === 0) {
+                        slidePosition = slidePosition - s.size / 2 - spaceBetween;
+                    }
+                    if (Math.abs(slidePosition) < 1 / 1000) {
+                        slidePosition = 0;
+                    }
+                    if ((index) % s.params.slidesPerGroup === 0) {
+                        // 每组的位置
+                        s.snapGrid.push(slidePosition);
+                    }
+                    // slide的位置
                     s.slidesGrid.push(slidePosition);
                 }
                 else {
-                    if ((index) % s.params.slidesPerGroup === 0) s.snapGrid.push(slidePosition);
+                    if ((index) % s.params.slidesPerGroup === 0) {
+                        s.snapGrid.push(slidePosition);
+                    }
                     s.slidesGrid.push(slidePosition);
                     slidePosition = slidePosition + slideSize + spaceBetween;
                 }
-        
+                // 实效尺寸
                 s.virtualSize += slideSize + spaceBetween;
-        
+                // 保存的前一个slide的尺寸
                 prevSlideSize = slideSize;
-        
+
                 index ++;
             }
+            // 实效尺寸
             s.virtualSize = Math.max(s.virtualSize, s.size) + s.params.slidesOffsetAfter;
             var newSlidesGrid;
-        
-            if (
-                s.rtl && s.wrongRTL && (s.params.effect === 'slide' || s.params.effect === 'coverflow')) {
+
+            if (s.rtl && s.wrongRTL && (s.params.effect === 'slide' || s.params.effect === 'coverflow')) {
                 s.wrapper.css({width: s.virtualSize + s.params.spaceBetween + 'px'});
             }
+            // 如果不支持flexbox或者设定包裹大小为真
             if (!s.support.flexbox || s.params.setWrapperSize) {
-                if (s.isHorizontal()) s.wrapper.css({width: s.virtualSize + s.params.spaceBetween + 'px'});
-                else s.wrapper.css({height: s.virtualSize + s.params.spaceBetween + 'px'});
+                if (s.isHorizontal()) {
+                    s.wrapper.css({width: s.virtualSize + s.params.spaceBetween + 'px'});
+                }
+                else {
+                    s.wrapper.css({height: s.virtualSize + s.params.spaceBetween + 'px'});
+                }
             }
-        
+
             if (s.params.slidesPerColumn > 1) {
                 s.virtualSize = (slideSize + s.params.spaceBetween) * slidesNumberEvenToRows;
                 s.virtualSize = Math.ceil(s.virtualSize / s.params.slidesPerColumn) - s.params.spaceBetween;
-                if (s.isHorizontal()) s.wrapper.css({width: s.virtualSize + s.params.spaceBetween + 'px'});
-                else s.wrapper.css({height: s.virtualSize + s.params.spaceBetween + 'px'});
+
+                if (s.isHorizontal()) {
+                    s.wrapper.css({width: s.virtualSize + s.params.spaceBetween + 'px'});
+                }
+                else {
+                    s.wrapper.css({height: s.virtualSize + s.params.spaceBetween + 'px'});
+                }
+
                 if (s.params.centeredSlides) {
                     newSlidesGrid = [];
                     for (i = 0; i < s.snapGrid.length; i++) {
-                        if (s.snapGrid[i] < s.virtualSize + s.snapGrid[0]) newSlidesGrid.push(s.snapGrid[i]);
+                        if (s.snapGrid[i] < s.virtualSize + s.snapGrid[0]) {
+                            newSlidesGrid.push(s.snapGrid[i]);
+                        }
                     }
                     s.snapGrid = newSlidesGrid;
                 }
             }
-        
+
             // Remove last grid elements depending on width
             if (!s.params.centeredSlides) {
                 newSlidesGrid = [];
@@ -907,14 +1152,21 @@
                 }
             }
             if (s.snapGrid.length === 0) s.snapGrid = [0];
-        
+
             if (s.params.spaceBetween !== 0) {
                 if (s.isHorizontal()) {
-                    if (s.rtl) s.slides.css({marginLeft: spaceBetween + 'px'});
-                    else s.slides.css({marginRight: spaceBetween + 'px'});
+                    if (s.rtl) {
+                        s.slides.css({marginLeft: spaceBetween + 'px'});
+                    }
+                    else {
+                        s.slides.css({marginRight: spaceBetween + 'px'});
+                    }
                 }
-                else s.slides.css({marginBottom: spaceBetween + 'px'});
+                else {
+                    s.slides.css({marginBottom: spaceBetween + 'px'});
+                }
             }
+
             if (s.params.watchSlidesProgress) {
                 s.updateSlidesOffset();
             }
@@ -924,7 +1176,7 @@
                 s.slides[i].swiperSlideOffset = s.isHorizontal() ? s.slides[i].offsetLeft : s.slides[i].offsetTop;
             }
         };
-        
+
         /*=========================
           Dynamic Slides Per View
           ===========================*/
@@ -966,10 +1218,10 @@
             }
             if (s.slides.length === 0) return;
             if (typeof s.slides[0].swiperSlideOffset === 'undefined') s.updateSlidesOffset();
-        
+
             var offsetCenter = -translate;
             if (s.rtl) offsetCenter = translate;
-        
+
             // Visible Slides
             s.slides.removeClass(s.params.slideVisibleClass);
             for (var i = 0; i < s.slides.length; i++) {
@@ -1007,7 +1259,7 @@
             }
             if (s.isBeginning && !wasBeginning) s.emit('onReachBeginning', s);
             if (s.isEnd && !wasEnd) s.emit('onReachEnd', s);
-        
+
             if (s.params.watchSlidesProgress) s.updateSlidesProgress(translate);
             s.emit('onProgress', s, s.progress);
         };
@@ -1040,7 +1292,7 @@
             // }
             snapIndex = Math.floor(newActiveIndex / s.params.slidesPerGroup);
             if (snapIndex >= s.snapGrid.length) snapIndex = s.snapGrid.length - 1;
-        
+
             if (newActiveIndex === s.activeIndex) {
                 return;
             }
@@ -1053,7 +1305,7 @@
         s.updateRealIndex = function(){
             s.realIndex = parseInt(s.slides.eq(s.activeIndex).attr('data-swiper-slide-index') || s.activeIndex, 10);
         };
-        
+
         /*=========================
           Classes
           ===========================*/
@@ -1098,7 +1350,7 @@
                     s.wrapper.children('.' + s.params.slideClass + '.' + s.params.slideDuplicateClass + '[data-swiper-slide-index="' + prevSlide.attr('data-swiper-slide-index') + '"]').addClass(s.params.slideDuplicatePrevClass);
                 }
             }
-        
+
             // Pagination
             if (s.paginationContainer && s.paginationContainer.length > 0) {
                 // Current/Total
@@ -1151,7 +1403,7 @@
                     s.emit('onPaginationRendered', s, s.paginationContainer[0]);
                 }
             }
-        
+
             // Next/active buttons
             if (!s.params.loop) {
                 if (s.params.prevButton && s.prevButton && s.prevButton.length > 0) {
@@ -1176,18 +1428,23 @@
                 }
             }
         };
-        
+
         /*=========================
-          Pagination
+          Pagination 分页器
           ===========================*/
         s.updatePagination = function () {
-            if (!s.params.pagination) return;
+            if (!s.params.pagination) {
+                return;
+            }
             if (s.paginationContainer && s.paginationContainer.length > 0) {
                 var paginationHTML = '';
+                // 圆点
                 if (s.params.paginationType === 'bullets') {
+                    // 圆点数量 Math.ceil()向上取整
                     var numberOfBullets = s.params.loop ? Math.ceil((s.slides.length - s.loopedSlides * 2) / s.params.slidesPerGroup) : s.snapGrid.length;
                     for (var i = 0; i < numberOfBullets; i++) {
                         if (s.params.paginationBulletRender) {
+                            // http://www.swiper.com.cn/api/pagination/2014/1217/70.html
                             paginationHTML += s.params.paginationBulletRender(s, i, s.params.bulletClass);
                         }
                         else {
@@ -1200,6 +1457,7 @@
                         s.a11y.initPagination();
                     }
                 }
+                // 分式
                 if (s.params.paginationType === 'fraction') {
                     if (s.params.paginationFractionRender) {
                         paginationHTML = s.params.paginationFractionRender(s, s.params.paginationCurrentClass, s.params.paginationTotalClass);
@@ -1212,6 +1470,7 @@
                     }
                     s.paginationContainer.html(paginationHTML);
                 }
+                // 进度条
                 if (s.params.paginationType === 'progress') {
                     if (s.params.paginationProgressRender) {
                         paginationHTML = s.params.paginationProgressRender(s, s.params.paginationProgressbarClass);
@@ -1274,7 +1533,7 @@
                 s.updateAutoHeight();
             }
         };
-        
+
         /*=========================
           Resize Handler
           ===========================*/
@@ -1284,12 +1543,12 @@
             if (s.params.breakpoints) {
                 s.setBreakpoint();
             }
-        
+
             // Disable locks on resize
             var allowSwipeToPrev = s.params.allowSwipeToPrev;
             var allowSwipeToNext = s.params.allowSwipeToNext;
             s.params.allowSwipeToPrev = s.params.allowSwipeToNext = true;
-        
+
             s.updateContainerSize();
             s.updateSlidesSize();
             if (s.params.slidesPerView === 'auto' || s.params.freeMode || forceUpdatePagination) s.updatePagination();
@@ -1305,7 +1564,7 @@
                 s.setWrapperTranslate(newTranslate);
                 s.updateActiveIndex();
                 s.updateClasses();
-        
+
                 if (s.params.autoHeight) {
                     s.updateAutoHeight();
                 }
@@ -1327,36 +1586,52 @@
             s.params.allowSwipeToNext = allowSwipeToNext;
             if (s.params.onAfterResize) s.params.onAfterResize(s);
         };
-        
+
         /*=========================
-          Events
+          Events 事件定义
           ===========================*/
-        
-        //Define Touch Events
-        s.touchEventsDesktop = {start: 'mousedown', move: 'mousemove', end: 'mouseup'};
-        if (window.navigator.pointerEnabled) s.touchEventsDesktop = {start: 'pointerdown', move: 'pointermove', end: 'pointerup'};
-        else if (window.navigator.msPointerEnabled) s.touchEventsDesktop = {start: 'MSPointerDown', move: 'MSPointerMove', end: 'MSPointerUp'};
+
+        // Define Touch Events 定义触摸事件
+        s.touchEventsDesktop = {
+            start: 'mousedown',
+            move: 'mousemove',
+            end: 'mouseup'
+        };
+        if (window.navigator.pointerEnabled) {
+            s.touchEventsDesktop = {
+                start: 'pointerdown',
+                move: 'pointermove',
+                end: 'pointerup'
+            };
+        }
+        else if (window.navigator.msPointerEnabled) {
+            s.touchEventsDesktop = {
+                start: 'MSPointerDown',
+                move: 'MSPointerMove',
+                end: 'MSPointerUp'
+            };
+        }
+
         s.touchEvents = {
             start : s.support.touch || !s.params.simulateTouch  ? 'touchstart' : s.touchEventsDesktop.start,
             move : s.support.touch || !s.params.simulateTouch ? 'touchmove' : s.touchEventsDesktop.move,
             end : s.support.touch || !s.params.simulateTouch ? 'touchend' : s.touchEventsDesktop.end
         };
-        
-        
+
         // WP8 Touch Events Fix
         if (window.navigator.pointerEnabled || window.navigator.msPointerEnabled) {
             (s.params.touchEventsTarget === 'container' ? s.container : s.wrapper).addClass('swiper-wp8-' + s.params.direction);
         }
-        
-        // Attach/detach events
+
+        // Attach/detach events 绑定或解绑
         s.initEvents = function (detach) {
             var actionDom = detach ? 'off' : 'on';
             var action = detach ? 'removeEventListener' : 'addEventListener';
             var touchEventsTarget = s.params.touchEventsTarget === 'container' ? s.container[0] : s.wrapper[0];
             var target = s.support.touch ? touchEventsTarget : document;
-        
+            // 动作捕捉，冒泡还是捕获
             var moveCapture = s.params.nested ? true : false;
-        
+
             //Touch Events
             if (s.browser.ie) {
                 touchEventsTarget[action](s.touchEvents.start, s.onTouchStart, false);
@@ -1377,7 +1652,7 @@
                 }
             }
             window[action]('resize', s.onResize);
-        
+
             // Next, Prev, Index
             if (s.params.nextButton && s.nextButton && s.nextButton.length > 0) {
                 s.nextButton[actionDom]('click', s.onClickNext);
@@ -1391,27 +1666,36 @@
                 s.paginationContainer[actionDom]('click', '.' + s.params.bulletClass, s.onClickIndex);
                 if (s.params.a11y && s.a11y) s.paginationContainer[actionDom]('keydown', '.' + s.params.bulletClass, s.a11y.onEnterKey);
             }
-        
+
             // Prevent Links Clicks
-            if (s.params.preventClicks || s.params.preventClicksPropagation) touchEventsTarget[action]('click', s.preventClicks, true);
+            if (s.params.preventClicks || s.params.preventClicksPropagation) {
+                touchEventsTarget[action]('click', s.preventClicks, true);
+            }
         };
+        // 绑定事件
         s.attachEvents = function () {
             s.initEvents();
         };
+        // 解绑事件
         s.detachEvents = function () {
             s.initEvents(true);
         };
-        
+
         /*=========================
-          Handle Clicks
+          Handle Clicks 处理点击
           ===========================*/
         // Prevent Clicks
         s.allowClick = true;
         s.preventClicks = function (e) {
+            // 不允许点击
             if (!s.allowClick) {
                 if (s.params.preventClicks) e.preventDefault();
                 if (s.params.preventClicksPropagation && s.animating) {
+                    // https://developer.mozilla.org/zh-CN/docs/Web/API/Event/stopPropagation
+                    // 阻止事件冒泡
                     e.stopPropagation();
+                    // https://developer.mozilla.org/zh-CN/docs/Web/API/Event/stopImmediatePropagation
+                    // 阻止调用相同事件的其他侦听器。
                     e.stopImmediatePropagation();
                 }
             }
@@ -1419,24 +1703,38 @@
         // Clicks
         s.onClickNext = function (e) {
             e.preventDefault();
-            if (s.isEnd && !s.params.loop) return;
+            // 最后一个并且不支持循环模式
+            if (s.isEnd && !s.params.loop) {
+                return;
+            }
             s.slideNext();
         };
         s.onClickPrev = function (e) {
             e.preventDefault();
-            if (s.isBeginning && !s.params.loop) return;
+            // 第一个并且不支持循环模式
+            if (s.isBeginning && !s.params.loop) {
+                return;
+            }
             s.slidePrev();
         };
         s.onClickIndex = function (e) {
             e.preventDefault();
             var index = $(this).index() * s.params.slidesPerGroup;
-            if (s.params.loop) index = index + s.loopedSlides;
+            if (s.params.loop) {
+                index = index + s.loopedSlides;
+            }
             s.slideTo(index);
         };
-        
+
         /*=========================
-          Handle Touches
+          Handle Touches 处理触摸事件
           ===========================*/
+        /**
+         * 检测触发事件的对象或其父类是否为指定的选择器并返回
+         * @param  {[type]} e        指代事件
+         * @param  {[type]} selector 指定选择器
+         * @return {[type]}          制定选择器元素或undefined
+         */
         function findElementInEvent(e, selector) {
             var el = $(e.target);
             if (!el.is(selector)) {
@@ -1446,10 +1744,16 @@
                 else if (selector.nodeType) {
                     var found;
                     el.parents().each(function (index, _el) {
-                        if (_el === selector) found = selector;
+                        if (_el === selector) {
+                            found = selector;
+                        }
                     });
-                    if (!found) return undefined;
-                    else return selector;
+                    if (!found) {
+                        return undefined;
+                    }
+                    else {
+                        return selector;
+                    }
                 }
             }
             if (el.length === 0) {
@@ -1465,7 +1769,7 @@
                     if (s.slides[i] === slide) slideFound = true;
                 }
             }
-        
+
             if (slide && slideFound) {
                 s.clickedSlide = slide;
                 s.clickedIndex = $(slide).index();
@@ -1513,7 +1817,7 @@
                 }
             }
         };
-        
+
         var isTouched,
             isMoved,
             allowTouchCallbacks,
@@ -1529,10 +1833,10 @@
             //Velocities
             velocities = [],
             allowMomentumBounce;
-        
-        // Animating Flag
+
+        // Animating Flag 正在动画过程中标记
         s.animating = false;
-        
+
         // Touches information
         s.touches = {
             startX: 0,
@@ -1541,7 +1845,7 @@
             currentY: 0,
             diff: 0
         };
-        
+
         // Touch handlers
         var isTouchEvent, startMoving;
         s.onTouchStart = function (e) {
@@ -1555,15 +1859,15 @@
             if (s.params.swipeHandler) {
                 if (!findElementInEvent(e, s.params.swipeHandler)) return;
             }
-        
+
             var startX = s.touches.currentX = e.type === 'touchstart' ? e.targetTouches[0].pageX : e.pageX;
             var startY = s.touches.currentY = e.type === 'touchstart' ? e.targetTouches[0].pageY : e.pageY;
-        
+
             // Do NOT start if iOS edge swipe is detected. Otherwise iOS app (UIWebView) cannot swipe-to-go-back anymore
             if(s.device.ios && s.params.iOSEdgeSwipeDetection && startX <= s.params.iOSEdgeSwipeThreshold) {
                 return;
             }
-        
+
             isTouched = true;
             isMoved = false;
             allowTouchCallbacks = true;
@@ -1588,7 +1892,7 @@
             }
             s.emit('onTouchStart', s, e);
         };
-        
+
         s.onTouchMove = function (e) {
             if (e.originalEvent) e = e.originalEvent;
             if (isTouchEvent && e.type === 'mousemove') return;
@@ -1637,10 +1941,10 @@
                 s.emit('onTouchMove', s, e);
             }
             if (e.targetTouches && e.targetTouches.length > 1) return;
-        
+
             s.touches.currentX = e.type === 'touchmove' ? e.targetTouches[0].pageX : e.pageX;
             s.touches.currentY = e.type === 'touchmove' ? e.targetTouches[0].pageY : e.pageY;
-        
+
             if (typeof isScrolling === 'undefined') {
                 var touchAngle;
                 if (s.isHorizontal() && s.touches.currentY === s.touches.startY || !s.isHorizontal() && s.touches.currentX === s.touches.startX) {
@@ -1673,7 +1977,7 @@
             if (s.params.touchMoveStopPropagation && !s.params.nested) {
                 e.stopPropagation();
             }
-        
+
             if (!isMoved) {
                 if (params.loop) {
                     s.fixLoop();
@@ -1698,15 +2002,15 @@
                 }
             }
             isMoved = true;
-        
+
             var diff = s.touches.diff = s.isHorizontal() ? s.touches.currentX - s.touches.startX : s.touches.currentY - s.touches.startY;
-        
+
             diff = diff * s.params.touchRatio;
             if (s.rtl) diff = -diff;
-        
+
             s.swipeDirection = diff > 0 ? 'prev' : 'next';
             currentTranslate = diff + startTranslate;
-        
+
             var disableParentSwiper = true;
             if ((diff > 0 && currentTranslate > s.minTranslate())) {
                 disableParentSwiper = false;
@@ -1716,11 +2020,11 @@
                 disableParentSwiper = false;
                 if (s.params.resistance) currentTranslate = s.maxTranslate() + 1 - Math.pow(s.maxTranslate() - startTranslate - diff, s.params.resistanceRatio);
             }
-        
+
             if (disableParentSwiper) {
                 e.preventedByNestedSwiper = true;
             }
-        
+
             // Directions locks
             if (!s.params.allowSwipeToNext && s.swipeDirection === 'next' && currentTranslate < startTranslate) {
                 currentTranslate = startTranslate;
@@ -1728,8 +2032,8 @@
             if (!s.params.allowSwipeToPrev && s.swipeDirection === 'prev' && currentTranslate > startTranslate) {
                 currentTranslate = startTranslate;
             }
-        
-        
+
+
             // Threshold
             if (s.params.threshold > 0) {
                 if (Math.abs(diff) > s.params.threshold || allowThresholdMove) {
@@ -1747,9 +2051,9 @@
                     return;
                 }
             }
-        
+
             if (!s.params.followFinger) return;
-        
+
             // Update active index in free mode
             if (s.params.freeMode || s.params.watchSlidesProgress) {
                 s.updateActiveIndex();
@@ -1783,11 +2087,11 @@
             if (s.params.grabCursor && isMoved && isTouched  && (s.params.allowSwipeToNext === true || s.params.allowSwipeToPrev === true)) {
                 s.setGrabCursor(false);
             }
-        
+
             // Time diff
             var touchEndTime = Date.now();
             var timeDiff = touchEndTime - touchStartTime;
-        
+
             // Tap, doubleTap, Click
             if (s.allowClick) {
                 s.updateClickedSlide(e);
@@ -1801,25 +2105,25 @@
                         }
                         s.emit('onClick', s, e);
                     }, 300);
-        
+
                 }
                 if (timeDiff < 300 && (touchEndTime - lastClickTime) < 300) {
                     if (clickTimeout) clearTimeout(clickTimeout);
                     s.emit('onDoubleTap', s, e);
                 }
             }
-        
+
             lastClickTime = Date.now();
             setTimeout(function () {
                 if (s) s.allowClick = true;
             }, 0);
-        
+
             if (!isTouched || !isMoved || !s.swipeDirection || s.touches.diff === 0 || currentTranslate === startTranslate) {
                 isTouched = isMoved = false;
                 return;
             }
             isTouched = isMoved = false;
-        
+
             var currentPos;
             if (s.params.followFinger) {
                 currentPos = s.rtl ? s.translate : -s.translate;
@@ -1841,11 +2145,11 @@
                     }
                     return;
                 }
-        
+
                 if (s.params.freeModeMomentum) {
                     if (velocities.length > 1) {
                         var lastMoveEvent = velocities.pop(), velocityEvent = velocities.pop();
-        
+
                         var distance = lastMoveEvent.position - velocityEvent.position;
                         var time = lastMoveEvent.time - velocityEvent.time;
                         s.velocity = distance / time;
@@ -1862,11 +2166,11 @@
                         s.velocity = 0;
                     }
                     s.velocity = s.velocity * s.params.freeModeMomentumVelocityRatio;
-        
+
                     velocities.length = 0;
                     var momentumDuration = 1000 * s.params.freeModeMomentumRatio;
                     var momentumDistance = s.velocity * momentumDuration;
-        
+
                     var newPosition = s.translate + momentumDistance;
                     if (s.rtl) newPosition = - newPosition;
                     var doBounce = false;
@@ -1906,7 +2210,7 @@
                                 nextSlide = j;
                                 break;
                             }
-        
+
                         }
                         if (Math.abs(s.snapGrid[nextSlide] - newPosition) < Math.abs(s.snapGrid[nextSlide - 1] - newPosition) || s.swipeDirection === 'next') {
                             newPosition = s.snapGrid[nextSlide];
@@ -1928,7 +2232,7 @@
                         s.slideReset();
                         return;
                     }
-        
+
                     if (s.params.freeModeMomentumBounce && doBounce) {
                         s.updateProgress(afterBouncePosition);
                         s.setWrapperTransition(momentumDuration);
@@ -1938,7 +2242,7 @@
                         s.wrapper.transitionEnd(function () {
                             if (!s || !allowMomentumBounce) return;
                             s.emit('onMomentumBounce', s);
-        
+
                             s.setWrapperTransition(s.params.speed);
                             s.setWrapperTranslate(afterBouncePosition);
                             s.wrapper.transitionEnd(function () {
@@ -1958,11 +2262,11 @@
                                 s.onTransitionEnd();
                             });
                         }
-        
+
                     } else {
                         s.updateProgress(newPosition);
                     }
-        
+
                     s.updateActiveIndex();
                 }
                 if (!s.params.freeModeMomentum || timeDiff >= s.params.longSwipesMs) {
@@ -1971,7 +2275,7 @@
                 }
                 return;
             }
-        
+
             // Find current slide
             var i, stopIndex = 0, groupSize = s.slidesSizesGrid[0];
             for (i = 0; i < s.slidesGrid.length; i += s.params.slidesPerGroup) {
@@ -1988,10 +2292,10 @@
                     }
                 }
             }
-        
+
             // Find current slide size
             var ratio = (currentPos - s.slidesGrid[stopIndex]) / groupSize;
-        
+
             if (timeDiff > s.params.longSwipesMs) {
                 // Long touches
                 if (!s.params.longSwipes) {
@@ -2001,7 +2305,7 @@
                 if (s.swipeDirection === 'next') {
                     if (ratio >= s.params.longSwipesRatio) s.slideTo(stopIndex + s.params.slidesPerGroup);
                     else s.slideTo(stopIndex);
-        
+
                 }
                 if (s.swipeDirection === 'prev') {
                     if (ratio > (1 - s.params.longSwipesRatio)) s.slideTo(stopIndex + s.params.slidesPerGroup);
@@ -2016,7 +2320,7 @@
                 }
                 if (s.swipeDirection === 'next') {
                     s.slideTo(stopIndex + s.params.slidesPerGroup);
-        
+
                 }
                 if (s.swipeDirection === 'prev') {
                     s.slideTo(stopIndex);
@@ -2035,7 +2339,7 @@
             if (slideIndex < 0) slideIndex = 0;
             s.snapIndex = Math.floor(slideIndex / s.params.slidesPerGroup);
             if (s.snapIndex >= s.snapGrid.length) s.snapIndex = s.snapGrid.length - 1;
-        
+
             var translate = - s.snapGrid[s.snapIndex];
             // Stop autoplay
             if (s.params.autoplay && s.autoplaying) {
@@ -2048,7 +2352,7 @@
             }
             // Update progress
             s.updateProgress(translate);
-        
+
             // Normalize slideIndex
             if(s.params.normalizeSlideIndex){
                 for (var i = 0; i < s.slidesGrid.length; i++) {
@@ -2057,7 +2361,7 @@
                     }
                 }
             }
-        
+
             // Directions locks
             if (!s.params.allowSwipeToNext && translate < s.translate && translate < s.minTranslate()) {
                 return false;
@@ -2065,7 +2369,7 @@
             if (!s.params.allowSwipeToPrev && translate > s.translate && translate > s.maxTranslate()) {
                 if ((s.activeIndex || 0) !== slideIndex ) return false;
             }
-        
+
             // Update Index
             if (typeof speed === 'undefined') speed = s.params.speed;
             s.previousIndex = s.activeIndex || 0;
@@ -2084,7 +2388,7 @@
             }
             s.updateClasses();
             s.onTransitionStart(runCallbacks);
-        
+
             if (speed === 0 || s.browser.lteIE9) {
                 s.setWrapperTranslate(translate);
                 s.setWrapperTransition(0);
@@ -2100,12 +2404,12 @@
                         s.onTransitionEnd(runCallbacks);
                     });
                 }
-        
+
             }
-        
+
             return true;
         };
-        
+
         s.onTransitionStart = function (runCallbacks) {
             if (typeof runCallbacks === 'undefined') runCallbacks = true;
             if (s.params.autoHeight) {
@@ -2123,7 +2427,7 @@
                         s.emit('onSlidePrevStart', s);
                     }
                 }
-        
+
             }
         };
         s.onTransitionEnd = function (runCallbacks) {
@@ -2149,7 +2453,7 @@
             if (s.params.hashnav && s.hashnav) {
                 s.hashnav.setHash();
             }
-        
+
         };
         s.slideNext = function (runCallbacks, speed, internal) {
             if (s.params.loop) {
@@ -2178,7 +2482,7 @@
         s.slideReset = function (runCallbacks, speed, internal) {
             return s.slideTo(s.activeIndex, speed, runCallbacks);
         };
-        
+
         s.disableTouchControl = function () {
             s.params.onlyExternal = true;
             return true;
@@ -2187,7 +2491,7 @@
             s.params.onlyExternal = false;
             return true;
         };
-        
+
         /*=========================
           Translate/transition helpers
           ===========================*/
@@ -2215,19 +2519,19 @@
             else {
                 y = translate;
             }
-        
+
             if (s.params.roundLengths) {
                 x = round(x);
                 y = round(y);
             }
-        
+
             if (!s.params.virtualTranslate) {
                 if (s.support.transforms3d) s.wrapper.transform('translate3d(' + x + 'px, ' + y + 'px, ' + z + 'px)');
                 else s.wrapper.transform('translate(' + x + 'px, ' + y + 'px)');
             }
-        
+
             s.translate = s.isHorizontal() ? x : y;
-        
+
             // Check if we need to update progress
             var progress;
             var translatesDiff = s.maxTranslate() - s.minTranslate();
@@ -2240,7 +2544,7 @@
             if (progress !== s.progress) {
                 s.updateProgress(translate);
             }
-        
+
             if (updateActiveIndex) s.updateActiveIndex();
             if (s.params.effect !== 'slide' && s.effects[s.params.effect]) {
                 s.effects[s.params.effect].setTranslate(s.translate);
@@ -2256,19 +2560,19 @@
             }
             s.emit('onSetTranslate', s, s.translate);
         };
-        
+
         s.getTranslate = function (el, axis) {
             var matrix, curTransform, curStyle, transformMatrix;
-        
+
             // automatic axis detection
             if (typeof axis === 'undefined') {
                 axis = 'x';
             }
-        
+
             if (s.params.virtualTranslate) {
                 return s.rtl ? -s.translate : s.translate;
             }
-        
+
             curStyle = window.getComputedStyle(el, null);
             if (window.WebKitCSSMatrix) {
                 curTransform = curStyle.transform || curStyle.webkitTransform;
@@ -2285,7 +2589,7 @@
                 transformMatrix = curStyle.MozTransform || curStyle.OTransform || curStyle.MsTransform || curStyle.msTransform  || curStyle.transform || curStyle.getPropertyValue('transform').replace('translate(', 'matrix(1, 0, 0, 1,');
                 matrix = transformMatrix.toString().split(',');
             }
-        
+
             if (axis === 'x') {
                 //Latest Chrome and webkits Fix
                 if (window.WebKitCSSMatrix)
@@ -2317,7 +2621,7 @@
             }
             return s.getTranslate(s.wrapper[0], axis);
         };
-        
+
         /*=========================
           Observer
           ===========================*/
@@ -2332,13 +2636,13 @@
                     s.emit('onObserverUpdate', s, mutation);
                 });
             });
-        
+
             observer.observe(target, {
                 attributes: typeof options.attributes === 'undefined' ? true : options.attributes,
                 childList: typeof options.childList === 'undefined' ? true : options.childList,
                 characterData: typeof options.characterData === 'undefined' ? true : options.characterData
             });
-        
+
             s.observers.push(observer);
         }
         s.initObservers = function () {
@@ -2348,10 +2652,10 @@
                     initObserver(containerParents[i]);
                 }
             }
-        
+
             // Observe container
             initObserver(s.container[0], {childList: false});
-        
+
             // Observe wrapper
             initObserver(s.wrapper[0], {attributes: false});
         };
@@ -2362,23 +2666,23 @@
             s.observers = [];
         };
         /*=========================
-          Loop
+          Loop 循环
           ===========================*/
         // Create looped slides
         s.createLoop = function () {
-            // Remove duplicated slides
+            // Remove duplicated(复制的) slides
             s.wrapper.children('.' + s.params.slideClass + '.' + s.params.slideDuplicateClass).remove();
-        
+
             var slides = s.wrapper.children('.' + s.params.slideClass);
-        
+            // 在loop模式下使用slidesPerview:'auto',还需使用该参数设置所要用到的loop个数。
             if(s.params.slidesPerView === 'auto' && !s.params.loopedSlides) s.params.loopedSlides = slides.length;
-        
+
             s.loopedSlides = parseInt(s.params.loopedSlides || s.params.slidesPerView, 10);
             s.loopedSlides = s.loopedSlides + s.params.loopAdditionalSlides;
             if (s.loopedSlides > slides.length) {
                 s.loopedSlides = slides.length;
             }
-        
+
             var prependSlides = [], appendSlides = [], i;
             slides.each(function (index, el) {
                 var slide = $(this);
@@ -2405,17 +2709,16 @@
             if (updatePosition) {
                 s.slideTo(oldIndex + s.loopedSlides, 0, false);
             }
-        
         };
         s.fixLoop = function () {
             var newIndex;
-            //Fix For Negative Oversliding
+            //Fix For Negative Oversliding(负位)
             if (s.activeIndex < s.loopedSlides) {
                 newIndex = s.slides.length - s.loopedSlides * 3 + s.activeIndex;
                 newIndex = newIndex + s.loopedSlides;
                 s.slideTo(newIndex, 0, false, true);
             }
-            //Fix For Positive Oversliding
+            //Fix For Positive Oversliding(正位)
             else if ((s.params.slidesPerView === 'auto' && s.activeIndex >= s.loopedSlides * 2) || (s.activeIndex > s.slides.length - s.params.slidesPerView * 2)) {
                 newIndex = -s.slides.length + s.activeIndex + s.loopedSlides;
                 newIndex = newIndex + s.loopedSlides;
@@ -2487,11 +2790,11 @@
                 if (indexToRemove < newActiveIndex) newActiveIndex--;
                 newActiveIndex = Math.max(newActiveIndex, 0);
             }
-        
+
             if (s.params.loop) {
                 s.createLoop();
             }
-        
+
             if (!(s.params.observer && s.support.observer)) {
                 s.update(true);
             }
@@ -2501,7 +2804,7 @@
             else {
                 s.slideTo(newActiveIndex, 0, false);
             }
-        
+
         };
         s.removeAllSlides = function () {
             var slidesIndexes = [];
@@ -2510,7 +2813,7 @@
             }
             s.removeSlide(slidesIndexes);
         };
-        
+
 
         /*=========================
           Effects
@@ -2536,9 +2839,9 @@
                                 opacity: slideOpacity
                             })
                             .transform('translate3d(' + tx + 'px, ' + ty + 'px, 0px)');
-        
+
                     }
-        
+
                 },
                 setTransition: function (duration) {
                     s.slides.transition(duration);
@@ -2580,9 +2883,9 @@
                         else if (s.rtl) {
                             rotateY = -rotateY;
                         }
-        
+
                         slide[0].style.zIndex = -Math.abs(Math.round(progress)) + s.slides.length;
-        
+
                         if (s.params.flip.slideShadows) {
                             //Set shadows
                             var shadowBefore = s.isHorizontal() ? slide.find('.swiper-slide-shadow-left') : slide.find('.swiper-slide-shadow-top');
@@ -2598,7 +2901,7 @@
                             if (shadowBefore.length) shadowBefore[0].style.opacity = Math.max(-progress, 0);
                             if (shadowAfter.length) shadowAfter[0].style.opacity = Math.max(progress, 0);
                         }
-        
+
                         slide
                             .transform('translate3d(' + tx + 'px, ' + ty + 'px, 0px) rotateX(' + rotateX + 'deg) rotateY(' + rotateY + 'deg)');
                     }
@@ -2670,12 +2973,12 @@
                         if (s.rtl) {
                             tx = -tx;
                         }
-        
+
                         if (!s.isHorizontal()) {
                             ty = tx;
                             tx = 0;
                         }
-        
+
                         var transform = 'rotateX(' + (s.isHorizontal() ? 0 : -slideAngle) + 'deg) rotateY(' + (s.isHorizontal() ? slideAngle : 0) + 'deg) translate3d(' + tx + 'px, ' + ty + 'px, ' + tz + 'px)';
                         if (progress <= 1 && progress > -1) {
                             wrapperRotate = i * 90 + progress * 90;
@@ -2704,7 +3007,7 @@
                         '-ms-transform-origin': '50% 50% -' + (s.size / 2) + 'px',
                         'transform-origin': '50% 50% -' + (s.size / 2) + 'px'
                     });
-        
+
                     if (s.params.cube.shadow) {
                         if (s.isHorizontal()) {
                             cubeShadow.transform('translate3d(0px, ' + (s.width / 2 + s.params.cube.shadowOffset) + 'px, ' + (-s.width / 2) + 'px) rotateX(90deg) rotateZ(0deg) scale(' + (s.params.cube.shadowScale) + ')');
@@ -2740,24 +3043,24 @@
                         var slideSize = s.slidesSizesGrid[i];
                         var slideOffset = slide[0].swiperSlideOffset;
                         var offsetMultiplier = (center - slideOffset - slideSize / 2) / slideSize * s.params.coverflow.modifier;
-        
+
                         var rotateY = s.isHorizontal() ? rotate * offsetMultiplier : 0;
                         var rotateX = s.isHorizontal() ? 0 : rotate * offsetMultiplier;
                         // var rotateZ = 0
                         var translateZ = -translate * Math.abs(offsetMultiplier);
-        
+
                         var translateY = s.isHorizontal() ? 0 : s.params.coverflow.stretch * (offsetMultiplier);
                         var translateX = s.isHorizontal() ? s.params.coverflow.stretch * (offsetMultiplier) : 0;
-        
+
                         //Fix for ultra small values
                         if (Math.abs(translateX) < 0.001) translateX = 0;
                         if (Math.abs(translateY) < 0.001) translateY = 0;
                         if (Math.abs(translateZ) < 0.001) translateZ = 0;
                         if (Math.abs(rotateY) < 0.001) rotateY = 0;
                         if (Math.abs(rotateX) < 0.001) rotateX = 0;
-        
+
                         var slideTransform = 'translate3d(' + translateX + 'px,' + translateY + 'px,' + translateZ + 'px)  rotateX(' + rotateX + 'deg) rotateY(' + rotateY + 'deg)';
-        
+
                         slide.transform(slideTransform);
                         slide[0].style.zIndex = -Math.abs(Math.round(offsetMultiplier)) + 1;
                         if (s.params.coverflow.slideShadows) {
@@ -2776,7 +3079,7 @@
                             if (shadowAfter.length) shadowAfter[0].style.opacity = (-offsetMultiplier) > 0 ? -offsetMultiplier : 0;
                         }
                     }
-        
+
                     //Set correct perspective for IE10
                     if (s.browser.ie) {
                         var ws = s.wrapper[0].style;
@@ -2788,7 +3091,7 @@
                 }
             }
         };
-        
+
 
         /*=========================
           Images Lazy Loading
@@ -2799,14 +3102,14 @@
                 if (typeof index === 'undefined') return;
                 if (typeof loadInDuplicate === 'undefined') loadInDuplicate = true;
                 if (s.slides.length === 0) return;
-        
+
                 var slide = s.slides.eq(index);
                 var img = slide.find('.' + s.params.lazyLoadingClass + ':not(.' + s.params.lazyStatusLoadedClass + '):not(.' + s.params.lazyStatusLoadingClass + ')');
                 if (slide.hasClass(s.params.lazyLoadingClass) && !slide.hasClass(s.params.lazyStatusLoadedClass) && !slide.hasClass(s.params.lazyStatusLoadingClass)) {
                     img = img.add(slide[0]);
                 }
                 if (img.length === 0) return;
-        
+
                 img.each(function () {
                     var _img = $(this);
                     _img.addClass(s.params.lazyStatusLoadingClass);
@@ -2833,9 +3136,9 @@
                                 _img.attr('src', src);
                                 _img.removeAttr('data-src');
                             }
-        
+
                         }
-        
+
                         _img.addClass(s.params.lazyStatusLoadedClass).removeClass(s.params.lazyStatusLoadingClass);
                         slide.find('.' + s.params.lazyPreloaderClass + ', .' + s.params.preloaderClass).remove();
                         if (s.params.loop && loadInDuplicate) {
@@ -2851,10 +3154,10 @@
                         }
                         s.emit('onLazyImageReady', s, slide[0], _img[0]);
                     });
-        
+
                     s.emit('onLazyImageLoad', s, slide[0], _img[0]);
                 });
-        
+
             },
             load: function () {
                 var i;
@@ -2896,7 +3199,7 @@
                     else {
                         var nextSlide = s.wrapper.children('.' + s.params.slideNextClass);
                         if (nextSlide.length > 0) s.lazy.loadImageInSlide(nextSlide.index());
-        
+
                         var prevSlide = s.wrapper.children('.' + s.params.slidePrevClass);
                         if (prevSlide.length > 0) s.lazy.loadImageInSlide(prevSlide.index());
                     }
@@ -2915,10 +3218,10 @@
                 }
             }
         };
-        
+
 
         /*=========================
-          Scrollbar
+          Scrollbar 滚动条
           ===========================*/
         s.scrollbar = {
             isTouched: false,
@@ -2947,10 +3250,10 @@
                 sb.isTouched = true;
                 e.preventDefault();
                 e.stopPropagation();
-        
+
                 sb.setDragPosition(e);
                 clearTimeout(sb.dragTimeout);
-        
+
                 sb.track.transition(0);
                 if (s.params.scrollbarHide) {
                     sb.track.css('opacity', 1);
@@ -2980,7 +3283,7 @@
                         sb.track.css('opacity', 0);
                         sb.track.transition(400);
                     }, 1000);
-        
+
                 }
                 s.emit('onScrollbarDragEnd', s);
                 if (s.params.scrollbarSnapOnRelease) {
@@ -3006,12 +3309,17 @@
                 $(target).off(sb.draggableEvents.end, sb.dragEnd);
             },
             set: function () {
-                if (!s.params.scrollbar) return;
+                if (!s.params.scrollbar) {
+                    return;
+                }
                 var sb = s.scrollbar;
+                // 滚道
                 sb.track = $(s.params.scrollbar);
+                // 保持独一无二
                 if (s.params.uniqueNavElements && typeof s.params.scrollbar === 'string' && sb.track.length > 1 && s.container.find(s.params.scrollbar).length === 1) {
                     sb.track = s.container.find(s.params.scrollbar);
                 }
+                // 拖拽
                 sb.drag = sb.track.find('.swiper-scrollbar-drag');
                 if (sb.drag.length === 0) {
                     sb.drag = $('<div class="swiper-scrollbar-drag"></div>');
@@ -3020,24 +3328,27 @@
                 sb.drag[0].style.width = '';
                 sb.drag[0].style.height = '';
                 sb.trackSize = s.isHorizontal() ? sb.track[0].offsetWidth : sb.track[0].offsetHeight;
-        
+                // 分配器 container的size/实效尺寸
                 sb.divider = s.size / s.virtualSize;
+
                 sb.moveDivider = sb.divider * (sb.trackSize / s.size);
+
                 sb.dragSize = sb.trackSize * sb.divider;
-        
+
                 if (s.isHorizontal()) {
                     sb.drag[0].style.width = sb.dragSize + 'px';
                 }
                 else {
                     sb.drag[0].style.height = sb.dragSize + 'px';
                 }
-        
+
                 if (sb.divider >= 1) {
                     sb.track[0].style.display = 'none';
                 }
                 else {
                     sb.track[0].style.display = '';
                 }
+
                 if (s.params.scrollbarHide) {
                     sb.track[0].style.opacity = 0;
                 }
@@ -3048,7 +3359,7 @@
                 var sb = s.scrollbar;
                 var translate = s.translate || 0;
                 var newPos;
-        
+
                 var newSize = sb.dragSize;
                 newPos = (sb.trackSize - sb.dragSize) * s.progress;
                 if (s.rtl && s.isHorizontal()) {
@@ -3102,7 +3413,7 @@
                 s.scrollbar.drag.transition(duration);
             }
         };
-        
+
 
         /*=========================
           Controller
@@ -3131,14 +3442,14 @@
                 // (x3,y3) is the known point after given value.
                 var i1, i3;
                 var l = this.x.length;
-        
+
                 this.interpolate = function (x2) {
                     if (!x2) return 0;
-        
+
                     // Get the indexes of x1 and x3 (the array indexes before and after given x2):
                     i3 = binarySearch(this.x, x2);
                     i1 = i3 - 1;
-        
+
                     // We have our indexes i1 & i3, so we can calculate already:
                     // y2 := ((x2−x1) × (y3−y1)) ÷ (x3−x1) + y1
                     return ((x2 - this.x[i1]) * (this.y[i3] - this.y[i1])) / (this.x[i3] - this.x[i1]) + this.y[i1];
@@ -3165,12 +3476,12 @@
                         // but it did not work out
                         controlledTranslate = -s.controller.spline.interpolate(-translate);
                     }
-        
+
                     if(!controlledTranslate || s.params.controlBy === 'container'){
                         multiplier = (c.maxTranslate() - c.minTranslate()) / (s.maxTranslate() - s.minTranslate());
                         controlledTranslate = (translate - s.minTranslate()) * multiplier + c.minTranslate();
                     }
-        
+
                     if (s.params.controlInverse) {
                         controlledTranslate = c.maxTranslate() - controlledTranslate;
                     }
@@ -3186,7 +3497,7 @@
                    }
                }
                else if (controlled instanceof Swiper && byController !== controlled) {
-        
+
                    setControlledTranslate(controlled);
                }
             },
@@ -3203,7 +3514,7 @@
                                 c.fixLoop();
                             }
                             c.onTransitionEnd();
-        
+
                         });
                     }
                 }
@@ -3219,7 +3530,7 @@
                 }
             }
         };
-        
+
 
         /*=========================
           Hash Navigation
@@ -3267,7 +3578,7 @@
                 if (s.params.hashnavWatchState) s.hashnav.attachEvents(true);
             }
         };
-        
+
 
         /*=========================
           History Api with fallback to Hashnav
@@ -3335,7 +3646,7 @@
                 }
             }
         };
-        
+
 
         /*=========================
           Keyboard Control
@@ -3384,7 +3695,7 @@
                     ) {
                         inView = true;
                     }
-        
+
                 }
                 if (!inView) return;
             }
@@ -3414,7 +3725,7 @@
             s.params.keyboardControl = true;
             $(document).on('keydown', handleKeyboard);
         };
-        
+
 
         /*=========================
           Mousewheel Control
@@ -3426,13 +3737,13 @@
         function isEventSupported() {
             var eventName = 'onwheel';
             var isSupported = eventName in document;
-        
+
             if (!isSupported) {
                 var element = document.createElement('div');
                 element.setAttribute(eventName, 'return;');
                 isSupported = typeof element[eventName] === 'function';
             }
-        
+
             if (!isSupported &&
                 document.implementation &&
                 document.implementation.hasFeature &&
@@ -3442,7 +3753,7 @@
                 // This is the only way to test support for the `wheel` event in IE9+.
                 isSupported = document.implementation.hasFeature('Events.wheel', '3.0');
             }
-        
+
             return isSupported;
         }
         /**
@@ -3550,10 +3861,10 @@
             var PIXEL_STEP = 10;
             var LINE_HEIGHT = 40;
             var PAGE_HEIGHT = 800;
-        
+
             var sX = 0, sY = 0,       // spinX, spinY
                 pX = 0, pY = 0;       // pixelX, pixelY
-        
+
             // Legacy
             if( 'detail' in event ) {
                 sY = event.detail;
@@ -3567,23 +3878,23 @@
             if( 'wheelDeltaX' in event ) {
                 sX = -event.wheelDeltaX / 120;
             }
-        
+
             // side scrolling on FF with DOMMouseScroll
             if( 'axis' in event && event.axis === event.HORIZONTAL_AXIS ) {
                 sX = sY;
                 sY = 0;
             }
-        
+
             pX = sX * PIXEL_STEP;
             pY = sY * PIXEL_STEP;
-        
+
             if( 'deltaY' in event ) {
                 pY = event.deltaY;
             }
             if( 'deltaX' in event ) {
                 pX = event.deltaX;
             }
-        
+
             if( (pX || pY) && event.deltaMode ) {
                 if( event.deltaMode === 1 ) {          // delta in LINE units
                     pX *= LINE_HEIGHT;
@@ -3593,7 +3904,7 @@
                     pY *= PAGE_HEIGHT;
                 }
             }
-        
+
             // Fall-back if spin cannot be determined
             if( pX && !sX ) {
                 sX = (pX < 1) ? -1 : 1;
@@ -3601,7 +3912,7 @@
             if( pY && !sY ) {
                 sY = (pY < 1) ? -1 : 1;
             }
-        
+
             return {
                 spinX: sX,
                 spinY: sY,
@@ -3624,9 +3935,9 @@
             if (e.originalEvent) e = e.originalEvent; //jquery fix
             var delta = 0;
             var rtlFactor = s.rtl ? -1 : 1;
-        
+
             var data = normalizeWheel( e );
-        
+
             if (s.params.mousewheelForceToAxis) {
                 if (s.isHorizontal()) {
                     if (Math.abs(data.pixelX) > Math.abs(data.pixelY)) delta = data.pixelX * rtlFactor;
@@ -3640,11 +3951,11 @@
             else {
                 delta = Math.abs(data.pixelX) > Math.abs(data.pixelY) ? - data.pixelX * rtlFactor : - data.pixelY;
             }
-        
+
             if (delta === 0) return;
-        
+
             if (s.params.mousewheelInvert) delta = -delta;
-        
+
             if (!s.params.freeMode) {
                 if ((new window.Date()).getTime() - s.mousewheel.lastScrollTime > 60) {
                     if (delta < 0) {
@@ -3663,26 +3974,26 @@
                     }
                 }
                 s.mousewheel.lastScrollTime = (new window.Date()).getTime();
-        
+
             }
             else {
                 //Freemode or scrollContainer:
                 var position = s.getWrapperTranslate() + delta * s.params.mousewheelSensitivity;
                 var wasBeginning = s.isBeginning,
                     wasEnd = s.isEnd;
-        
+
                 if (position >= s.minTranslate()) position = s.minTranslate();
                 if (position <= s.maxTranslate()) position = s.maxTranslate();
-        
+
                 s.setWrapperTransition(0);
                 s.setWrapperTranslate(position);
                 s.updateProgress();
                 s.updateActiveIndex();
-        
+
                 if (!wasBeginning && s.isBeginning || !wasEnd && s.isEnd) {
                     s.updateClasses();
                 }
-        
+
                 if (s.params.freeModeSticky) {
                     clearTimeout(s.mousewheel.timeout);
                     s.mousewheel.timeout = setTimeout(function () {
@@ -3696,14 +4007,14 @@
                 }
                 // Emit event
                 s.emit('onScroll', s, e);
-        
+
                 // Stop autoplay
                 if (s.params.autoplay && s.params.autoplayDisableOnInteraction) s.stopAutoplay();
-        
+
                 // Return page scroll on edge positions
                 if (position === 0 || position === s.maxTranslate()) return;
             }
-        
+
             if (e.preventDefault) e.preventDefault();
             else e.returnValue = false;
             return false;
@@ -3718,7 +4029,7 @@
             s.params.mousewheelControl = false;
             return true;
         };
-        
+
         s.enableMousewheelControl = function () {
             if (!s.mousewheel.event) return false;
             var target = s.container;
@@ -3729,7 +4040,7 @@
             s.params.mousewheelControl = true;
             return true;
         };
-        
+
 
         /*=========================
           Parallax
@@ -3738,7 +4049,7 @@
             el = $(el);
             var p, pX, pY;
             var rtlFactor = s.rtl ? -1 : 1;
-        
+
             p = el.attr('data-swiper-parallax') || '0';
             pX = el.attr('data-swiper-parallax-x');
             pY = el.attr('data-swiper-parallax-y');
@@ -3756,7 +4067,7 @@
                     pX = '0';
                 }
             }
-        
+
             if ((pX).indexOf('%') >= 0) {
                 pX = parseInt(pX, 10) * progress * rtlFactor + '%';
             }
@@ -3769,14 +4080,14 @@
             else {
                 pY = pY * progress + 'px' ;
             }
-        
+
             el.transform('translate3d(' + pX + ', ' + pY + ',0px)');
         }
         s.parallax = {
             setTranslate: function () {
                 s.container.children('[data-swiper-parallax], [data-swiper-parallax-x], [data-swiper-parallax-y]').each(function(){
                     setParallaxTransform(this, s.progress);
-        
+
                 });
                 s.slides.each(function () {
                     var slide = $(this);
@@ -3796,7 +4107,7 @@
                 });
             }
         };
-        
+
 
         /*=========================
           Zoom
@@ -3921,7 +4232,7 @@
                 if (!z.gesture.image || z.gesture.image.length === 0) return;
                 s.allowClick = false;
                 if (!z.image.isTouched || !z.gesture.slide) return;
-        
+
                 if (!z.image.isMoved) {
                     z.image.width = z.gesture.image[0].offsetWidth;
                     z.image.height = z.gesture.image[0].offsetHeight;
@@ -3936,17 +4247,17 @@
                 // Define if we need image drag
                 var scaledWidth = z.image.width * z.scale;
                 var scaledHeight = z.image.height * z.scale;
-        
+
                 if (scaledWidth < z.gesture.slideWidth && scaledHeight < z.gesture.slideHeight) return;
-        
+
                 z.image.minX = Math.min((z.gesture.slideWidth / 2 - scaledWidth / 2), 0);
                 z.image.maxX = -z.image.minX;
                 z.image.minY = Math.min((z.gesture.slideHeight / 2 - scaledHeight / 2), 0);
                 z.image.maxY = -z.image.minY;
-        
+
                 z.image.touchesCurrent.x = e.type === 'touchmove' ? e.targetTouches[0].pageX : e.pageX;
                 z.image.touchesCurrent.y = e.type === 'touchmove' ? e.targetTouches[0].pageY : e.pageY;
-        
+
                 if (!z.image.isMoved && !z.isScaling) {
                     if (s.isHorizontal() &&
                         (Math.floor(z.image.minX) === Math.floor(z.image.startX) && z.image.touchesCurrent.x < z.image.touchesStart.x) ||
@@ -3965,25 +4276,25 @@
                 }
                 e.preventDefault();
                 e.stopPropagation();
-        
+
                 z.image.isMoved = true;
                 z.image.currentX = z.image.touchesCurrent.x - z.image.touchesStart.x + z.image.startX;
                 z.image.currentY = z.image.touchesCurrent.y - z.image.touchesStart.y + z.image.startY;
-        
+
                 if (z.image.currentX < z.image.minX) {
                     z.image.currentX =  z.image.minX + 1 - Math.pow((z.image.minX - z.image.currentX + 1), 0.8);
                 }
                 if (z.image.currentX > z.image.maxX) {
                     z.image.currentX = z.image.maxX - 1 + Math.pow((z.image.currentX - z.image.maxX + 1), 0.8);
                 }
-        
+
                 if (z.image.currentY < z.image.minY) {
                     z.image.currentY =  z.image.minY + 1 - Math.pow((z.image.minY - z.image.currentY + 1), 0.8);
                 }
                 if (z.image.currentY > z.image.maxY) {
                     z.image.currentY = z.image.maxY - 1 + Math.pow((z.image.currentY - z.image.maxY + 1), 0.8);
                 }
-        
+
                 //Velocity
                 if (!z.velocity.prevPositionX) z.velocity.prevPositionX = z.image.touchesCurrent.x;
                 if (!z.velocity.prevPositionY) z.velocity.prevPositionY = z.image.touchesCurrent.y;
@@ -3995,7 +4306,7 @@
                 z.velocity.prevPositionX = z.image.touchesCurrent.x;
                 z.velocity.prevPositionY = z.image.touchesCurrent.y;
                 z.velocity.prevTime = Date.now();
-        
+
                 z.gesture.imageWrap.transform('translate3d(' + z.image.currentX + 'px, ' + z.image.currentY + 'px,0)');
             },
             onTouchEnd: function (s, e) {
@@ -4014,15 +4325,15 @@
                 var newPositionX = z.image.currentX + momentumDistanceX;
                 var momentumDistanceY = z.velocity.y * momentumDurationY;
                 var newPositionY = z.image.currentY + momentumDistanceY;
-        
+
                 //Fix duration
                 if (z.velocity.x !== 0) momentumDurationX = Math.abs((newPositionX - z.image.currentX) / z.velocity.x);
                 if (z.velocity.y !== 0) momentumDurationY = Math.abs((newPositionY - z.image.currentY) / z.velocity.y);
                 var momentumDuration = Math.max(momentumDurationX, momentumDurationY);
-        
+
                 z.image.currentX = newPositionX;
                 z.image.currentY = newPositionY;
-        
+
                 // Define if we need image drag
                 var scaledWidth = z.image.width * z.scale;
                 var scaledHeight = z.image.height * z.scale;
@@ -4032,7 +4343,7 @@
                 z.image.maxY = -z.image.minY;
                 z.image.currentX = Math.max(Math.min(z.image.currentX, z.image.maxX), z.image.minX);
                 z.image.currentY = Math.max(Math.min(z.image.currentY, z.image.maxY), z.image.minY);
-        
+
                 z.gesture.imageWrap.transition(momentumDuration).transform('translate3d(' + z.image.currentX + 'px, ' + z.image.currentY + 'px,0)');
             },
             onTransitionEnd: function (s) {
@@ -4053,9 +4364,9 @@
                     z.gesture.imageWrap = z.gesture.image.parent('.' + s.params.zoomContainerClass);
                 }
                 if (!z.gesture.image || z.gesture.image.length === 0) return;
-        
+
                 var touchX, touchY, offsetX, offsetY, diffX, diffY, translateX, translateY, imageWidth, imageHeight, scaledWidth, scaledHeight, translateMinX, translateMinY, translateMaxX, translateMaxY, slideWidth, slideHeight;
-        
+
                 if (typeof z.image.touchesStart.x === 'undefined' && e) {
                     touchX = e.type === 'touchend' ? e.changedTouches[0].pageX : e.pageX;
                     touchY = e.type === 'touchend' ? e.changedTouches[0].pageY : e.pageY;
@@ -4064,7 +4375,7 @@
                     touchX = z.image.touchesStart.x;
                     touchY = z.image.touchesStart.y;
                 }
-        
+
                 if (z.scale && z.scale !== 1) {
                     // Zoom Out
                     z.scale = z.currentScale = 1;
@@ -4082,27 +4393,27 @@
                         offsetY = z.gesture.slide.offset().top;
                         diffX = offsetX + slideWidth/2 - touchX;
                         diffY = offsetY + slideHeight/2 - touchY;
-        
+
                         imageWidth = z.gesture.image[0].offsetWidth;
                         imageHeight = z.gesture.image[0].offsetHeight;
                         scaledWidth = imageWidth * z.scale;
                         scaledHeight = imageHeight * z.scale;
-        
+
                         translateMinX = Math.min((slideWidth / 2 - scaledWidth / 2), 0);
                         translateMinY = Math.min((slideHeight / 2 - scaledHeight / 2), 0);
                         translateMaxX = -translateMinX;
                         translateMaxY = -translateMinY;
-        
+
                         translateX = diffX * z.scale;
                         translateY = diffY * z.scale;
-        
+
                         if (translateX < translateMinX) {
                             translateX =  translateMinX;
                         }
                         if (translateX > translateMaxX) {
                             translateX = translateMaxX;
                         }
-        
+
                         if (translateY < translateMinY) {
                             translateY =  translateMinY;
                         }
@@ -4121,7 +4432,7 @@
             // Attach/Detach Events
             attachEvents: function (detach) {
                 var action = detach ? 'off' : 'on';
-        
+
                 if (s.params.zoom) {
                     var target = s.slides;
                     var passiveListener = s.touchEvents.start === 'touchstart' && s.support.passiveListener && s.params.passiveListeners ? {passive: true, capture: false} : false;
@@ -4136,7 +4447,7 @@
                         s.slides[action](s.touchEvents.move, s.zoom.onGestureChange, passiveListener);
                         s.slides[action](s.touchEvents.end, s.zoom.onGestureEnd, passiveListener);
                     }
-        
+
                     // Move image
                     s[action]('touchStart', s.zoom.onTouchStart);
                     s.slides.each(function (index, slide){
@@ -4145,7 +4456,7 @@
                         }
                     });
                     s[action]('touchEnd', s.zoom.onTouchEnd);
-        
+
                     // Scale Out
                     s[action]('transitionEnd', s.zoom.onTransitionEnd);
                     if (s.params.zoomToggle) {
@@ -4160,7 +4471,7 @@
                 s.zoom.attachEvents(true);
             }
         };
-        
+
 
         /*=========================
           Plugins API. Collect all and init all plugins
@@ -4178,12 +4489,14 @@
                 }
             }
         };
-        
+
 
         /*=========================
-          Events/Callbacks/Plugins Emitter
+          Events/Callbacks/Plugins Emitter 发射器
           ===========================*/
+        // 标准化事件名称
         function normalizeEventName (eventName) {
+            // 如果'on'不在字符串首部
             if (eventName.indexOf('on') !== 0) {
                 if (eventName[0] !== eventName[0].toUpperCase()) {
                     eventName = 'on' + eventName[0].toUpperCase() + eventName.substring(1);
@@ -4195,10 +4508,10 @@
             return eventName;
         }
         s.emitterEventListeners = {
-        
+
         };
         s.emit = function (eventName) {
-            // Trigger callbacks
+            // Trigger callbacks 触发器回调函数
             if (s.params[eventName]) {
                 s.params[eventName](arguments[1], arguments[2], arguments[3], arguments[4], arguments[5]);
             }
@@ -4214,7 +4527,9 @@
         };
         s.on = function (eventName, handler) {
             eventName = normalizeEventName(eventName);
-            if (!s.emitterEventListeners[eventName]) s.emitterEventListeners[eventName] = [];
+            if (!s.emitterEventListeners[eventName]) {
+                s.emitterEventListeners[eventName] = [];
+            }
             s.emitterEventListeners[eventName].push(handler);
             return s;
         };
@@ -4241,9 +4556,10 @@
             s.on(eventName, _handler);
             return s;
         };
-        
 
-        // Accessibility tools
+
+        // Accessibility tools 无障碍性工具
+        // 辅助，无障碍阅读。开启本参数为屏幕阅读器添加语音提示等信息，方便视觉障碍者。基于ARIA标准。
         s.a11y = {
             makeFocusable: function ($el) {
                 $el.attr('tabIndex', '0');
@@ -4253,22 +4569,22 @@
                 $el.attr('role', role);
                 return $el;
             },
-        
+
             addLabel: function ($el, label) {
                 $el.attr('aria-label', label);
                 return $el;
             },
-        
+
             disable: function ($el) {
                 $el.attr('aria-disabled', true);
                 return $el;
             },
-        
+
             enable: function ($el) {
                 $el.attr('aria-disabled', false);
                 return $el;
             },
-        
+
             onEnterKey: function (event) {
                 if (event.keyCode !== 13) return;
                 if ($(event.target).is(s.params.nextButton)) {
@@ -4293,9 +4609,9 @@
                     $(event.target)[0].click();
                 }
             },
-        
+
             liveRegion: $('<span class="' + s.params.notificationClass + '" aria-live="assertive" aria-atomic="true"></span>'),
-        
+
             notify: function (message) {
                 var notification = s.a11y.liveRegion;
                 if (notification.length === 0) return;
@@ -4314,7 +4630,7 @@
                     s.a11y.addRole(s.prevButton, 'button');
                     s.a11y.addLabel(s.prevButton, s.params.prevSlideMessage);
                 }
-        
+
                 $(s.container).append(s.a11y.liveRegion);
             },
             initPagination: function () {
@@ -4331,19 +4647,24 @@
                 if (s.a11y.liveRegion && s.a11y.liveRegion.length > 0) s.a11y.liveRegion.remove();
             }
         };
-        
+
 
         /*=========================
-          Init/Destroy
+          Init/Destroy 初始化/销毁
           ===========================*/
         s.init = function () {
+            // 如果开启循环模式，创建循环结构
             if (s.params.loop) s.createLoop();
+            // container
             s.updateContainerSize();
+            // slide
             s.updateSlidesSize();
+            // 分页器
             s.updatePagination();
             if (s.params.scrollbar && s.scrollbar) {
                 s.scrollbar.set();
                 if (s.params.scrollbarDraggable) {
+                    // 开启拖动
                     s.scrollbar.enableDraggable();
                 }
             }
@@ -4396,15 +4717,15 @@
             if (s.params.a11y && s.a11y) s.a11y.init();
             s.emit('onInit', s);
         };
-        
+
         // Cleanup dynamic styles
         s.cleanupStyles = function () {
             // Container
             s.container.removeClass(s.classNames.join(' ')).removeAttr('style');
-        
+
             // Wrapper
             s.wrapper.removeAttr('style');
-        
+
             // Slides
             if (s.slides && s.slides.length) {
                 s.slides
@@ -4418,7 +4739,7 @@
                     .removeAttr('data-swiper-column')
                     .removeAttr('data-swiper-row');
             }
-        
+
             // Pagination/Bullets
             if (s.paginationContainer && s.paginationContainer.length) {
                 s.paginationContainer.removeClass(s.params.paginationHiddenClass);
@@ -4426,18 +4747,18 @@
             if (s.bullets && s.bullets.length) {
                 s.bullets.removeClass(s.params.bulletActiveClass);
             }
-        
+
             // Buttons
             if (s.params.prevButton) $(s.params.prevButton).removeClass(s.params.buttonDisabledClass);
             if (s.params.nextButton) $(s.params.nextButton).removeClass(s.params.buttonDisabledClass);
-        
+
             // Scrollbar
             if (s.params.scrollbar && s.scrollbar) {
                 if (s.scrollbar.track && s.scrollbar.track.length) s.scrollbar.track.removeAttr('style');
                 if (s.scrollbar.drag && s.scrollbar.drag.length) s.scrollbar.drag.removeAttr('style');
             }
         };
-        
+
         // Destroy
         s.destroy = function (deleteInstance, cleanupStyles) {
             // Detach evebts
@@ -4460,7 +4781,7 @@
             }
             // Disconnect observer
             s.disconnectObservers();
-        
+
             // Destroy zoom
             if (s.params.zoom && s.zoom) {
                 s.zoom.destroy();
@@ -4486,18 +4807,18 @@
             // Delete instance
             if (deleteInstance !== false) s = null;
         };
-        
-        s.init();
-        
 
-    
+        s.init();
+
+
+
         // Return swiper instance
         return s;
     };
-    
+
 
     /*==================================================
-        Prototype
+        Prototype 原型
     ====================================================*/
     Swiper.prototype = {
         isSafari: (function () {
@@ -4538,43 +4859,51 @@
             };
         })(),
         /*==================================================
-        Feature Detection
+        Feature Detection 功能检测
         ====================================================*/
         support: {
             touch : (window.Modernizr && Modernizr.touch === true) || (function () {
+                // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Operators/in
                 return !!(('ontouchstart' in window) || window.DocumentTouch && document instanceof DocumentTouch);
             })(),
-    
+
             transforms3d : (window.Modernizr && Modernizr.csstransforms3d === true) || (function () {
                 var div = document.createElement('div').style;
                 return ('webkitPerspective' in div || 'MozPerspective' in div || 'OPerspective' in div || 'MsPerspective' in div || 'perspective' in div);
             })(),
-    
+
             flexbox: (function () {
                 var div = document.createElement('div').style;
+                // 侧轴上的对齐方式 align-items、 -webkit-align-items、-webkit-box-align
+                // 伸缩流垂直方向 flex-direction、-webkit-box-direction、-webkit-box-orient
                 var styles = ('alignItems webkitAlignItems webkitBoxAlign msFlexAlign mozBoxAlign webkitFlexDirection msFlexDirection mozBoxDirection mozBoxOrient webkitBoxDirection webkitBoxOrient').split(' ');
                 for (var i = 0; i < styles.length; i++) {
                     if (styles[i] in div) return true;
                 }
             })(),
-    
+
             observer: (function () {
                 return ('MutationObserver' in window || 'WebkitMutationObserver' in window);
             })(),
-    
+
             passiveListener: (function () {
+                // 被动
+                // passive https://zhuanlan.zhihu.com/p/24555031 检测是否支持passive
+                // http://www.cnblogs.com/ziyunfei/p/5545439.html
                 var supportsPassive = false;
                 try {
+                    // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty
                     var opts = Object.defineProperty({}, 'passive', {
                         get: function() {
                             supportsPassive = true;
                         }
                     });
+                    // https://developer.mozilla.org/zh-CN/docs/Web/API/EventTarget/addEventListener
                     window.addEventListener('testPassiveListener', null, opts);
                 } catch (e) {}
                 return supportsPassive;
             })(),
-    
+
             gestures: (function () {
                 return 'ongesturestart' in window;
             })()
@@ -4584,12 +4913,13 @@
         ====================================================*/
         plugins: {}
     };
-    
+
 
     /*===========================
     Dom7 Library
     ===========================*/
     var Dom7 = (function () {
+        // 构造函数
         var Dom7 = function (arr) {
             var _this = this, i = 0;
             // Create array-like object
@@ -4600,6 +4930,7 @@
             // Return collection with methods
             return this;
         };
+        // 构造函数
         var $ = function (selector, context) {
             var arr = [], i = 0;
             if (selector && !context) {
@@ -4620,6 +4951,8 @@
                         if (html.indexOf('<option') === 0) toCreate = 'select';
                         tempParent = document.createElement(toCreate);
                         tempParent.innerHTML = selector;
+                        // https://developer.mozilla.org/zh-CN/docs/Web/API/Node/childNodes
+                        // Node.childNodes 返回包含指定节点的子节点的集合，该集合为即时更新的集合（live collection）
                         for (i = 0; i < tempParent.childNodes.length; i++) {
                             arr.push(tempParent.childNodes[i]);
                         }
@@ -4649,8 +4982,10 @@
                     }
                 }
             }
+            // 实例化
             return new Dom7(arr);
         };
+        // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Inheritance_and_the_prototype_chain
         Dom7.prototype = {
             // Classes and attriutes
             addClass: function (className) {
@@ -4666,9 +5001,13 @@
                 return this;
             },
             removeClass: function (className) {
+                // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/String/split
+                // split() 方法将一个String对象分割成字符串数组，通过将字符串分成子串。
                 var classes = className.split(' ');
                 for (var i = 0; i < classes.length; i++) {
                     for (var j = 0; j < this.length; j++) {
+                        // https://developer.mozilla.org/zh-CN/docs/Web/API/Element/classList
+                        // element.classList 本身是只读的，虽然你可以使用 add() 和 remove() 方法修改它。
                         this[j].classList.remove(classes[i]);
                     }
                 }
@@ -4676,20 +5015,28 @@
             },
             hasClass: function (className) {
                 if (!this[0]) return false;
+                // https://developer.mozilla.org/zh-CN/docs/Web/API/Element/classList
+                // contains检查元素的类属性中是否存在指定的类值。
                 else return this[0].classList.contains(className);
             },
             toggleClass: function (className) {
                 var classes = className.split(' ');
                 for (var i = 0; i < classes.length; i++) {
                     for (var j = 0; j < this.length; j++) {
+                        // https://developer.mozilla.org/zh-CN/docs/Web/API/Element/classList
+                        // toggle当只有一个参数时：切换 class value; 即如果类存在，则删除它并返回false，如果不存在，则添加它并返回true。
                         this[j].classList.toggle(classes[i]);
                     }
                 }
                 return this;
             },
             attr: function (attrs, value) {
+                // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Functions/arguments
+                // arguments 是一个类似数组的对象, 对应于传递给函数的参数。
                 if (arguments.length === 1 && typeof attrs === 'string') {
                     // Get attr
+                    // https://developer.mozilla.org/zh-CN/docs/Web/API/Element/getAttribute
+                    // getAttribute() 返回元素上一个指定的属性值。如果指定的属性不存在，则返回  null 或 "" （空字符串）
                     if (this[0]) return this[0].getAttribute(attrs);
                     else return undefined;
                 }
@@ -4698,6 +5045,7 @@
                     for (var i = 0; i < this.length; i++) {
                         if (arguments.length === 2) {
                             // String
+                            // https://developer.mozilla.org/zh-CN/docs/Web/API/Element/setAttribute
                             this[i].setAttribute(attrs, value);
                         }
                         else {
@@ -4713,6 +5061,7 @@
             },
             removeAttr: function (attr) {
                 for (var i = 0; i < this.length; i++) {
+                    // https://developer.mozilla.org/zh-CN/docs/Web/API/Element/removeAttribute
                     this[i].removeAttribute(attr);
                 }
                 return this;
@@ -4741,6 +5090,7 @@
             // Transforms
             transform : function (transform) {
                 for (var i = 0; i < this.length; i++) {
+                    // https://developer.mozilla.org/zh-CN/docs/Web/API/HTMLElement/style
                     var elStyle = this[i].style;
                     elStyle.webkitTransform = elStyle.MsTransform = elStyle.msTransform = elStyle.MozTransform = elStyle.OTransform = elStyle.transform = transform;
                 }
@@ -4778,6 +5128,7 @@
                             capture = arguments[2] || false;
                         }
                         for (j = 0; j < events.length; j++) {
+                            // https://developer.mozilla.org/zh-CN/docs/Web/API/EventTarget/addEventListener
                             this[i].addEventListener(events[j], listener, capture);
                         }
                     }
@@ -4790,7 +5141,7 @@
                         }
                     }
                 }
-    
+
                 return this;
             },
             off: function (eventName, targetSelector, listener, capture) {
@@ -4803,6 +5154,8 @@
                                 listener = arguments[1];
                                 capture = arguments[2] || false;
                             }
+                            // https://developer.mozilla.org/zh-CN/docs/Web/API/EventTarget/removeEventListener
+                            // 删除使用 EventTarget.addEventListener() 方法添加的事件
                             this[j].removeEventListener(events[i], listener, capture);
                         }
                         else {
@@ -4836,13 +5189,16 @@
                 for (var i = 0; i < this.length; i++) {
                     var evt;
                     try {
+                        // https://developer.mozilla.org/zh-CN/docs/Web/API/CustomEvent
                         evt = new window.CustomEvent(eventName, {detail: eventData, bubbles: true, cancelable: true});
                     }
+                    // https://developer.mozilla.org/zh-CN/docs/Web/Guide/Events/Creating_and_triggering_events
                     catch (e) {
                         evt = document.createEvent('Event');
                         evt.initEvent(eventName, true, true);
                         evt.detail = eventData;
                     }
+                    // https://developer.mozilla.org/zh-CN/docs/Web/API/EventTarget/dispatchEvent
                     this[i].dispatchEvent(evt);
                 }
                 return this;
@@ -4882,6 +5238,7 @@
             outerWidth: function (includeMargins) {
                 if (this.length > 0) {
                     if (includeMargins)
+                        // https://developer.mozilla.org/zh-CN/docs/Web/API/HTMLElement/offsetWidth
                         return this[0].offsetWidth + parseFloat(this.css('margin-right')) + parseFloat(this.css('margin-left'));
                     else
                         return this[0].offsetWidth;
@@ -4904,6 +5261,7 @@
             outerHeight: function (includeMargins) {
                 if (this.length > 0) {
                     if (includeMargins)
+                        // https://developer.mozilla.org/zh-CN/docs/Web/API/HTMLElement/offsetHeight
                         return this[0].offsetHeight + parseFloat(this.css('margin-top')) + parseFloat(this.css('margin-bottom'));
                     else
                         return this[0].offsetHeight;
@@ -4913,11 +5271,18 @@
             offset: function () {
                 if (this.length > 0) {
                     var el = this[0];
+                    // https://developer.mozilla.org/zh-CN/docs/Web/API/Element/getBoundingClientRect
                     var box = el.getBoundingClientRect();
                     var body = document.body;
+                    // https://developer.mozilla.org/zh-CN/docs/Web/API/Element/clientTop
                     var clientTop  = el.clientTop  || body.clientTop  || 0;
+                    // https://developer.mozilla.org/zh-CN/docs/Web/API/Element/clientLeft
                     var clientLeft = el.clientLeft || body.clientLeft || 0;
+                    // https://developer.mozilla.org/zh-CN/docs/Web/API/Window/pageYOffset
+                    // https://developer.mozilla.org/zh-CN/docs/Web/API/Element/scrollTop
                     var scrollTop  = window.pageYOffset || el.scrollTop;
+                    // https://developer.mozilla.org/zh-CN/docs/Web/API/Window/pageXOffset
+                    // https://developer.mozilla.org/zh-CN/docs/Web/API/Element/scrollLeft
                     var scrollLeft = window.pageXOffset || el.scrollLeft;
                     return {
                         top: box.top  + scrollTop  - clientTop,
@@ -4932,11 +5297,13 @@
                 var i;
                 if (arguments.length === 1) {
                     if (typeof props === 'string') {
+                        // https://developer.mozilla.org/zh-CN/docs/Web/API/Window/getComputedStyle
                         if (this[0]) return window.getComputedStyle(this[0], null).getPropertyValue(props);
                     }
                     else {
                         for (i = 0; i < this.length; i++) {
                             for (var prop in props) {
+                                // https://developer.mozilla.org/zh-CN/docs/Web/API/HTMLElement/style
                                 this[i].style[prop] = props[prop];
                             }
                         }
@@ -4951,9 +5318,10 @@
                 }
                 return this;
             },
-    
+
             //Dom manipulation
             each: function (callback) {
+                // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Function/call
                 for (var i = 0; i < this.length; i++) {
                     callback.call(this[i], i, this[i]);
                 }
@@ -4961,6 +5329,7 @@
             },
             html: function (html) {
                 if (typeof html === 'undefined') {
+                    // https://developer.mozilla.org/zh-CN/docs/Web/API/Element/innerHTML
                     return this[0] ? this[0].innerHTML : undefined;
                 }
                 else {
@@ -4973,6 +5342,8 @@
             text: function (text) {
                 if (typeof text === 'undefined') {
                     if (this[0]) {
+                        // https://developer.mozilla.org/zh-CN/docs/Web/API/Node/textContent
+                        // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/String/Trim
                         return this[0].textContent.trim();
                     }
                     else return null;
@@ -4991,7 +5362,8 @@
                     var el = this[0];
                     if (el === document) return selector === document;
                     if (el === window) return selector === window;
-    
+                    // https://developer.mozilla.org/zh-CN/docs/Web/API/Element/matches
+                    // 如果当前元素能被指定的css选择器查找到,则返回true,否则返回false
                     if (el.matches) return el.matches(selector);
                     else if (el.webkitMatchesSelector) return el.webkitMatchesSelector(selector);
                     else if (el.mozMatchesSelector) return el.mozMatchesSelector(selector);
@@ -5016,13 +5388,16 @@
                     }
                     return false;
                 }
-    
+
             },
             index: function () {
                 if (this[0]) {
                     var child = this[0];
                     var i = 0;
+                    // https://developer.mozilla.org/zh-CN/docs/Web/API/Node/previousSibling
+                    // 返回当前节点的前一个兄弟节点,没有则返回null.
                     while ((child = child.previousSibling) !== null) {
+                        // https://developer.mozilla.org/zh-CN/docs/Web/API/Node/nodeType
                         if (child.nodeType === 1) i++;
                     }
                     return i;
@@ -5049,7 +5424,11 @@
                     if (typeof newChild === 'string') {
                         var tempDiv = document.createElement('div');
                         tempDiv.innerHTML = newChild;
+                        // https://developer.mozilla.org/zh-CN/docs/Web/API/Node/firstChild
+                        // 只读属性返回树中节点的第一个子节点，如果节点是无子节点，则返回null
                         while (tempDiv.firstChild) {
+                            // https://developer.mozilla.org/zh-CN/docs/Web/API/Node/appendChild
+                            // Node.appendChild() 方法将一个节点添加到指定父节点的子节点列表末尾
                             this[i].appendChild(tempDiv.firstChild);
                         }
                     }
@@ -5070,9 +5449,14 @@
                     if (typeof newChild === 'string') {
                         var tempDiv = document.createElement('div');
                         tempDiv.innerHTML = newChild;
+                        // https://developer.mozilla.org/zh-CN/docs/Web/API/Node/childNodes
+                        // Node.childNodes 返回包含指定节点的子节点的集合，该集合为即时更新的集合（live collection）
                         for (j = tempDiv.childNodes.length - 1; j >= 0; j--) {
+                            // https://developer.mozilla.org/zh-CN/docs/Web/API/Node/insertBefore
+                            // Node.insertBefore() 方法，在当前节点的某个子节点之前再插入一个子节点
                             this[i].insertBefore(tempDiv.childNodes[j], this[i].childNodes[0]);
                         }
+                        // https://developer.mozilla.org/zh-CN/docs/Web/API/Element/insertAdjacentElement
                         // this[i].insertAdjacentHTML('afterbegin', newChild);
                     }
                     else if (newChild instanceof Dom7) {
@@ -5090,10 +5474,12 @@
                 var before = $(selector);
                 for (var i = 0; i < this.length; i++) {
                     if (before.length === 1) {
+                        // https://developer.mozilla.org/zh-CN/docs/Web/API/ParentNode
                         before[0].parentNode.insertBefore(this[i], before[0]);
                     }
                     else if (before.length > 1) {
                         for (var j = 0; j < before.length; j++) {
+                            // https://developer.mozilla.org/zh-CN/docs/Web/API/Node/cloneNode
                             before[j].parentNode.insertBefore(this[i].cloneNode(true), before[j]);
                         }
                     }
@@ -5103,10 +5489,12 @@
                 var after = $(selector);
                 for (var i = 0; i < this.length; i++) {
                     if (after.length === 1) {
+                        // https://developer.mozilla.org/zh-CN/docs/Web/API/Node/nextSibling
                         after[0].parentNode.insertBefore(this[i], after[0].nextSibling);
                     }
                     else if (after.length > 1) {
                         for (var j = 0; j < after.length; j++) {
+                            // https://developer.mozilla.org/zh-CN/docs/Web/API/Node/cloneNode
                             after[j].parentNode.insertBefore(this[i].cloneNode(true), after[j].nextSibling);
                         }
                     }
@@ -5115,6 +5503,7 @@
             next: function (selector) {
                 if (this.length > 0) {
                     if (selector) {
+                        // https://developer.mozilla.org/zh-CN/docs/Web/API/NonDocumentTypeChildNode/nextElementSibling
                         if (this[0].nextElementSibling && $(this[0].nextElementSibling).is(selector)) return new Dom7([this[0].nextElementSibling]);
                         else return new Dom7([]);
                     }
@@ -5142,6 +5531,8 @@
             prev: function (selector) {
                 if (this.length > 0) {
                     if (selector) {
+                        // https://developer.mozilla.org/zh-CN/docs/Web/API/NonDocumentTypeChildNode/previousElementSibling
+                        // previousElementSibling 返回当前元素在其父元素的子元素节点中的前一个元素节点,如果该元素已经是第一个元素节点,则返回null,该属性是只读的
                         if (this[0].previousElementSibling && $(this[0].previousElementSibling).is(selector)) return new Dom7([this[0].previousElementSibling]);
                         else return new Dom7([]);
                     }
@@ -5181,7 +5572,11 @@
             parents: function (selector) {
                 var parents = [];
                 for (var i = 0; i < this.length; i++) {
+                    // https://developer.mozilla.org/zh-CN/docs/Web/API/Node/parentNode
+                    // 返回指定的节点在DOM树中的父节点
                     var parent = this[i].parentNode;
+                    // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Statements/while
+                    // while 语句可以在某个条件表达式为真的前提下，循环执行指定的一段代码，直到那个表达式不为真时结束循环
                     while (parent) {
                         if (selector) {
                             if ($(parent).is(selector)) parents.push(parent);
@@ -5208,7 +5603,7 @@
                 var children = [];
                 for (var i = 0; i < this.length; i++) {
                     var childNodes = this[i].childNodes;
-    
+
                     for (var j = 0; j < childNodes.length; j++) {
                         if (!selector) {
                             if (childNodes[j].nodeType === 1) children.push(childNodes[j]);
@@ -5222,6 +5617,8 @@
             },
             remove: function () {
                 for (var i = 0; i < this.length; i++) {
+                    // https://developer.mozilla.org/zh-CN/docs/Web/API/Node/removeChild
+                    // Node.removeChild() 方法从DOM中删除一个子节点。返回删除的节点。
                     if (this[i].parentNode) this[i].parentNode.removeChild(this[i]);
                 }
                 return this;
@@ -5240,17 +5637,22 @@
             }
         };
         $.fn = Dom7.prototype;
+        // 去重
         $.unique = function (arr) {
             var unique = [];
             for (var i = 0; i < arr.length; i++) {
+                // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Array/indexOf
+                // indexOf()方法返回在数组中可以找到给定元素的第一个索引，如果不存在，则返回-1
+                // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Array/push
+                // push() 方法将一个或多个元素添加到数组的末尾，并返回数组的新长度
                 if (unique.indexOf(arr[i]) === -1) unique.push(arr[i]);
             }
             return unique;
         };
-    
+
         return $;
     })();
-    
+
 
     /*===========================
      Get Dom libraries
@@ -5269,7 +5671,7 @@
     else {
     	domLib = Dom7;
     }
-    
+
 
     /*===========================
     Add .swiper plugin from Dom libraries
@@ -5284,7 +5686,7 @@
             return firstInstance;
         };
     }
-    
+
     if (domLib) {
         if (!('transitionEnd' in domLib.fn)) {
             domLib.fn.transitionEnd = function (callback) {
@@ -5339,7 +5741,7 @@
             };
         }
     }
-    
+
 
     window.Swiper = Swiper;
 })();

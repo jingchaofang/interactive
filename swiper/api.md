@@ -1,6 +1,9 @@
 Swiper API
 ==========
 
+http://idangero.us/swiper/api/#.WQCLtL596S5
+
+
 Swiper Full HTML Layout
 ----------------------
 ```html
@@ -16,11 +19,11 @@ Swiper Full HTML Layout
     </div>
     <!-- If we need pagination -->
     <div class="swiper-pagination"></div>
-    
+
     <!-- If we need navigation buttons -->
     <div class="swiper-button-prev"></div>
     <div class="swiper-button-next"></div>
-    
+
     <!-- If we need scrollbar -->
     <div class="swiper-scrollbar"></div>
 </div>
@@ -62,6 +65,15 @@ Let's look on list of all available parameters:
 |speed|number|300|Duration of transition between slides (in ms)|
 |setWrapperSize|boolean|false|Enabled this option and plugin will set width/height on swiper wrapper equal to total size of all slides. Mostly should be used as compatibility fallback option for browser that don't support flexbox layout well|
 
+|slidesPerView|number or 'auto'|1|Number of slides per view (slides visible at the same time on slider's container).
+
+```
+If you use it with "auto" value and along with loop: true then you need to specify loopedSlides parameter with amount of slides to loop (duplicate)
+```
+```
+slidesPerView: 'auto' is currently not compatible with multirow mode, when slidesPerColumn > 1
+```
+|
 
 
 
