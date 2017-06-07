@@ -265,6 +265,12 @@
             prevButton: null,
             // Progress 开启这个参数来计算每个slide的progress(进度、进程)，Swiper的progress无需设置即开启。
             // http://www.swiper.com.cn/api/Progress/2015/0308/191.html
+            // 对于slide的progress属性，活动的那个为0，其他的依次减1。例：如果一共有6个slide，活动的是第三个，
+            // 从第一个到第六个的progress属性分别是：2、1、0、-1、-2、-3。
+            // 对于swiper的progress属性，活动的slide在最左（上）边时为0，活动的slide在最右（下）边时为1，其他情况平分。
+            // 例：有6个slide，当活动的是第三个时swiper的progress属性是0.4，当活动的是第五个时swiper的progress属性是0.8。
+            // swiper的progress其实就是wrapper的translate值的百分值，与activeIndex等属性不同，
+            // progress是随着swiper的切换而不停的变化，而不是在某个时间点突变。
             watchSlidesProgress: false,
             // 开启watchSlidesVisibility选项前需要先开启watchSlidesProgress，
             // 如果开启了watchSlidesVisibility，则会在每个可见slide增加一个classname，默认为'swiper-slide-visible'。
@@ -362,8 +368,16 @@
             preloaderClass: 'preloader',
             zoomContainerClass: 'swiper-zoom-container',
 
+            /**
+             * 监视器，观察者
+             */
             // Observer
+            // http://www.swiper.com.cn/api/Observer/2015/0308/218.html
+            // 启动动态检查器(OB/观众/观看者)，当改变swiper的样式（例如隐藏/显示）或者修改swiper的子元素时，自动初始化swiper。
+            // 默认false，不开启，可以使用update()方法更新。
             observer: false,
+            // 将observe应用于Swiper的父元素。当Swiper的父元素变化时，例如window.resize，Swiper更新。
+            // http://www.swiper.com.cn/api/Observer/2015/0308/219.html
             observeParents: false,
             // Accessibility
             // 辅助，无障碍阅读。开启本参数为屏幕阅读器添加语音提示等信息，方便视觉障碍者。基于ARIA标准。
@@ -672,6 +686,9 @@
 
         // RTL
         // https://developer.mozilla.org/zh-CN/docs/Web/HTML/Global_attributes/dir
+        // ltr, 指从左到右，用于那种从左向右书写的语言（比如英语）；
+        // rtl, 指从右到左，用于那种从右向左书写的语言（比如阿拉伯语）；
+        // auto, 指由用户代理决定方向。它在解析元素中字符时会运用一个基本算法，直到发现一个具有强方向性的字符，然后将这一方向应用于整个元素。
         s.rtl = s.isHorizontal() && (s.container[0].dir.toLowerCase() === 'rtl' || s.container.css('direction') === 'rtl');
         if (s.rtl) {
             s.classNames.push(s.params.containerModifierClass + 'rtl');
@@ -926,18 +943,25 @@
         // 更新container尺寸
         s.updateContainerSize = function () {
             var width, height;
+            // 如果显式设置了container的宽度
             if (typeof s.params.width !== 'undefined') {
                 width = s.params.width;
             }
             else {
+                // https://developer.mozilla.org/zh-CN/docs/Web/API/Element/clientWidth
+                // 该属性包括内边距，但不包括垂直滚动条（如果有的话）、边框和外边距。
                 width = s.container[0].clientWidth;
             }
+            // 如果显式设置了container的高度
             if (typeof s.params.height !== 'undefined') {
                 height = s.params.height;
             }
             else {
+                // https://developer.mozilla.org/zh-CN/docs/Web/API/Element/clientHeight
+                // 返回元素内部的高度(单位像素)，包含内边距，但不包括水平滚动条、边框和外边距。
                 height = s.container[0].clientHeight;
             }
+            // 需要保证container里有内容或显式设置了宽或高
             if (width === 0 && s.isHorizontal() || height === 0 && !s.isHorizontal()) {
                 return;
             }
@@ -951,32 +975,39 @@
             s.height = height;
             s.size = s.isHorizontal() ? s.width : s.height;
         };
-        // 更新slider项尺寸
+        // 更新slide尺寸
         s.updateSlidesSize = function () {
             s.slides = s.wrapper.children('.' + s.params.slideClass);
-            // 捕获的栅格
+            // 每组滑块的位置集数组
             s.snapGrid = [];
-            // slides栅格
+            // 滑块的位置集数组
             s.slidesGrid = [];
-            // slidesSizes栅格
+            // 滑块的尺寸集数组
             s.slidesSizesGrid = [];
-            // slide间距、slide与左边框的预设偏移量（单位px）、i、保存前一个slide尺寸、indez
+            // slide间距
             var spaceBetween = s.params.spaceBetween;
+            // slide与左边框的预设偏移量（单位px）
             var slidePosition = -s.params.slidesOffsetBefore;
             var i;
-            var prevSlideSize = 0,
-                index = 0;
+            // 保存前一个slide尺寸
+            var prevSlideSize = 0;
+            var index = 0;
+            // container没有尺寸则退出
             if (typeof s.size === 'undefined') return;
             // 处理百分比传值为数字
             if (typeof spaceBetween === 'string' && spaceBetween.indexOf('%') >= 0) {
                 spaceBetween = parseFloat(spaceBetween.replace('%', '')) / 100 * s.size;
             }
-            // virtualSize
+            // virtualSize 实际尺寸下面for循环累加得出
             s.virtualSize = -spaceBetween;
             // reset margins 重置外边距
-            if (s.rtl) s.slides.css({marginLeft: '', marginTop: ''});
-            else s.slides.css({marginRight: '', marginBottom: ''});
-            // 填满最后一行后的幻灯片总数或布局能容纳slider个数(偶数或奇数)
+            if (s.rtl) {
+                s.slides.css({marginLeft: '', marginTop: ''});
+            }
+            else {
+                s.slides.css({marginRight: '', marginBottom: ''});
+            }
+            // 填满最后一行后的幻灯片总数或布局能容纳slider个数
             var slidesNumberEvenToRows;
             if (s.params.slidesPerColumn > 1) {
                 // Math.floor()向下取整
@@ -996,10 +1027,10 @@
 
             // Calc slides
             var slideSize; // slide度量大小，水平滑动为宽度，垂直滑动为高度
-            var slidesPerColumn = s.params.slidesPerColumn; // 设定的每列能容纳slider个数
-            // 这里是布局能容纳的每行slider数，因为slidesNumberEvenToRows的调整，这里始终是整数
+            var slidesPerColumn = s.params.slidesPerColumn; // 参数设定的每列能容纳slider个数
+            // 这里是布局能容纳的每行slider数，这里始终是整数
             var slidesPerRow = slidesNumberEvenToRows / slidesPerColumn;
-            // 实际最后一行的slider个数
+            // 未补全前实际最后一行的slider个数
             var numFullColumns = slidesPerRow - (s.params.slidesPerColumn * slidesPerRow - s.slides.length);
             for (i = 0; i < s.slides.length; i++) {
                 slideSize = 0;
@@ -1046,15 +1077,21 @@
                         .attr('data-swiper-row', row);
 
                 }
-                if (slide.css('display') === 'none') continue;
+                if (slide.css('display') === 'none') {
+                    continue;
+                }
                 if (s.params.slidesPerView === 'auto') {
                     // slide大小 左右外边距+offsetWidth 或 上下外边距+offsetHeight
                     slideSize = s.isHorizontal() ? slide.outerWidth(true) : slide.outerHeight(true);
-                    if (s.params.roundLengths) slideSize = round(slideSize);
+                    if (s.params.roundLengths) {
+                        slideSize = round(slideSize);
+                    }
                 }
                 else {
                     slideSize = (s.size - (s.params.slidesPerView - 1) * spaceBetween) / s.params.slidesPerView;
-                    if (s.params.roundLengths) slideSize = round(slideSize);
+                    if (s.params.roundLengths) {
+                        slideSize = round(slideSize);
+                    }
 
                     if (s.isHorizontal()) {
                         s.slides[i].style.width = slideSize + 'px';
@@ -1068,6 +1105,7 @@
 
                 // 如果活动块居中
                 if (s.params.centeredSlides) {
+                    // 滑块位置
                     slidePosition = slidePosition + slideSize / 2 + prevSlideSize / 2 + spaceBetween;
                     if(prevSlideSize === 0 && i !== 0) {
                         slidePosition = slidePosition - s.size / 2 - spaceBetween;
@@ -1092,20 +1130,22 @@
                     s.slidesGrid.push(slidePosition);
                     slidePosition = slidePosition + slideSize + spaceBetween;
                 }
-                // 实效尺寸
+                // 通过累加得出实际尺寸
                 s.virtualSize += slideSize + spaceBetween;
                 // 保存的前一个slide的尺寸
                 prevSlideSize = slideSize;
 
                 index ++;
             }
-            // 实效尺寸
+            // 得出最终的实效尺寸
             s.virtualSize = Math.max(s.virtualSize, s.size) + s.params.slidesOffsetAfter;
             var newSlidesGrid;
 
+            // 针对rtl
             if (s.rtl && s.wrongRTL && (s.params.effect === 'slide' || s.params.effect === 'coverflow')) {
                 s.wrapper.css({width: s.virtualSize + s.params.spaceBetween + 'px'});
             }
+
             // 如果不支持flexbox或者设定包裹大小为真
             if (!s.support.flexbox || s.params.setWrapperSize) {
                 if (s.isHorizontal()) {
@@ -1118,6 +1158,7 @@
 
             if (s.params.slidesPerColumn > 1) {
                 s.virtualSize = (slideSize + s.params.spaceBetween) * slidesNumberEvenToRows;
+                // Math.ceil()向上取整
                 s.virtualSize = Math.ceil(s.virtualSize / s.params.slidesPerColumn) - s.params.spaceBetween;
 
                 if (s.isHorizontal()) {
@@ -1151,7 +1192,9 @@
                     s.snapGrid.push(s.virtualSize - s.size);
                 }
             }
-            if (s.snapGrid.length === 0) s.snapGrid = [0];
+            if (s.snapGrid.length === 0) {
+                s.snapGrid = [0];
+            }
 
             if (s.params.spaceBetween !== 0) {
                 if (s.isHorizontal()) {
@@ -1171,6 +1214,7 @@
                 s.updateSlidesOffset();
             }
         };
+        // 更新位置信息
         s.updateSlidesOffset = function () {
             for (var i = 0; i < s.slides.length; i++) {
                 s.slides[i].swiperSlideOffset = s.isHorizontal() ? s.slides[i].offsetLeft : s.slides[i].offsetTop;
@@ -1486,7 +1530,7 @@
             }
         };
         /*=========================
-          Common update method
+          Common update method 公共更新方法
           ===========================*/
         s.update = function (updateTranslate) {
             if (!s) return;
@@ -1495,6 +1539,7 @@
             s.updateProgress();
             s.updatePagination();
             s.updateClasses();
+            // 传参数并存在scrollbar方法
             if (s.params.scrollbar && s.scrollbar) {
                 s.scrollbar.set();
             }
@@ -2623,12 +2668,15 @@
         };
 
         /*=========================
-          Observer
+          Observer 监视器，观察者
           ===========================*/
         s.observers = [];
+        // 初始化
         function initObserver(target, options) {
             options = options || {};
             // create an observer instance
+            // https://developer.mozilla.org/zh-CN/docs/Web/API/MutationObserver
+            // MutationObserver给开发者们提供了一种能在某个范围内的DOM树发生变化时作出适当反应的能力.
             var ObserverFunc = window.MutationObserver || window.WebkitMutationObserver;
             var observer = new ObserverFunc(function (mutations) {
                 mutations.forEach(function (mutation) {
@@ -4655,12 +4703,13 @@
         s.init = function () {
             // 如果开启循环模式，创建循环结构
             if (s.params.loop) s.createLoop();
-            // container
+            // 更新container尺寸
             s.updateContainerSize();
-            // slide
+            // 更新slide尺寸
             s.updateSlidesSize();
             // 分页器
             s.updatePagination();
+            // 传参并且存在scrollbar方法
             if (s.params.scrollbar && s.scrollbar) {
                 s.scrollbar.set();
                 if (s.params.scrollbarDraggable) {
@@ -4669,9 +4718,12 @@
                 }
             }
             if (s.params.effect !== 'slide' && s.effects[s.params.effect]) {
-                if (!s.params.loop) s.updateProgress();
+                if (!s.params.loop) {
+                    s.updateProgress();
+                }
                 s.effects[s.params.effect].setTranslate();
             }
+            // 如果支持循环模式
             if (s.params.loop) {
                 s.slideTo(s.params.initialSlide + s.loopedSlides, 0, s.params.runCallbacksOnInit);
             }
@@ -4685,7 +4737,9 @@
                     }
                 }
             }
+            // 绑定事件
             s.attachEvents();
+            // 如果监视器方法存在
             if (s.params.observer && s.support.observer) {
                 s.initObservers();
             }
