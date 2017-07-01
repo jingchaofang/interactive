@@ -38,6 +38,8 @@
             // autoplay
             autoplay: false, // 自动切换的时间间隔（单位ms），不设定该参数slide不会自动切换。
             autoplayDisableOnInteraction: true, // 用户操作swiper之后，是否禁止autoplay。默认为true：停止。
+            // 如果设置为true，当切换到最后一个slide时停止自动切换。（loop模式下无效）。
+            // http://www.swiper.com.cn/api/basic/2016/0125/295.html
             autoplayStopOnLast: false,
             // To support iOS's swipe-to-go-back gesture (when being used in-app, with UIWebView).
             iOSEdgeSwipeDetection: false,
@@ -340,33 +342,33 @@
             // NS 容器可修改样式类
             containerModifierClass: 'swiper-container-', // NEW
             // slide样式标识
-            slideClass: 'swiper-slide',
-            slideActiveClass: 'swiper-slide-active',
-            slideDuplicateActiveClass: 'swiper-slide-duplicate-active',
-            slideVisibleClass: 'swiper-slide-visible',
+            slideClass: 'swiper-slide', // 设置slide的类名
+            slideActiveClass: 'swiper-slide-active', // 设置活动块的类名
+            slideDuplicateActiveClass: 'swiper-slide-duplicate-active', // Loop模式下活动块对应复制块的类名，或者相反
+            slideVisibleClass: 'swiper-slide-visible', // 设置可视块的类名
             // 复制的slide的样式标识
-            slideDuplicateClass: 'swiper-slide-duplicate',
-            slideNextClass: 'swiper-slide-next',
-            slideDuplicateNextClass: 'swiper-slide-duplicate-next',
-            slidePrevClass: 'swiper-slide-prev',
-            slideDuplicatePrevClass: 'swiper-slide-duplicate-prev',
-            wrapperClass: 'swiper-wrapper',
-            bulletClass: 'swiper-pagination-bullet',
-            bulletActiveClass: 'swiper-pagination-bullet-active',
-            buttonDisabledClass: 'swiper-button-disabled',
-            paginationCurrentClass: 'swiper-pagination-current',
-            paginationTotalClass: 'swiper-pagination-total',
-            paginationHiddenClass: 'swiper-pagination-hidden',
-            paginationProgressbarClass: 'swiper-pagination-progressbar',
-            paginationClickableClass: 'swiper-pagination-clickable', // NEW
-            paginationModifierClass: 'swiper-pagination-', // NEW
-            lazyLoadingClass: 'swiper-lazy',
-            lazyStatusLoadingClass: 'swiper-lazy-loading',
-            lazyStatusLoadedClass: 'swiper-lazy-loaded',
-            lazyPreloaderClass: 'swiper-lazy-preloader',
-            notificationClass: 'swiper-notification',
-            preloaderClass: 'preloader',
-            zoomContainerClass: 'swiper-zoom-container',
+            slideDuplicateClass: 'swiper-slide-duplicate', // loop模式下被复制的slide的类名
+            slideNextClass: 'swiper-slide-next', // active slide的下一个slide的类名
+            slideDuplicateNextClass: 'swiper-slide-duplicate-next', // Loop模式下活动块对应复制块的类名，或者相反
+            slidePrevClass: 'swiper-slide-prev', // active slide的前一个slide的类名
+            slideDuplicatePrevClass: 'swiper-slide-duplicate-prev', // loop下，前一个slide对应复制块的类名，或者相反
+            wrapperClass: 'swiper-wrapper', // 设置wrapper的css类名
+            bulletClass: 'swiper-pagination-bullet', // pagination分页器内元素的类名
+            bulletActiveClass: 'swiper-pagination-bullet-active', // pagination分页器内活动(active)元素的类名
+            buttonDisabledClass: 'swiper-button-disabled', // 前进后退按钮不可用时的类名
+            paginationCurrentClass: 'swiper-pagination-current', // 分式类型分页器的当前索引的类名
+            paginationTotalClass: 'swiper-pagination-total', // 分式类型分页器总数的类名
+            paginationHiddenClass: 'swiper-pagination-hidden', // 分页器隐藏时的类名
+            paginationProgressbarClass: 'swiper-pagination-progressbar', // 进度条型分页器的类名
+            paginationClickableClass: 'swiper-pagination-clickable', // 可点击的pagination的类名
+            paginationModifierClass: 'swiper-pagination-', // 修改以swiper-pagination-为前缀的类名
+            lazyLoadingClass: 'swiper-lazy', // 延迟加载的图片的类名
+            lazyStatusLoadingClass: 'swiper-lazy-loading', // 正在进行懒加载的元素的类名
+            lazyStatusLoadedClass: 'swiper-lazy-loaded', // 懒加载完成的元素的类名
+            lazyPreloaderClass: 'swiper-lazy-preloader', // 懒加载预加载元素的类名
+            notificationClass: 'swiper-notification', // A11y公告部分的类名
+            preloaderClass: 'preloader', // 其他预加载的类名
+            zoomContainerClass: 'swiper-zoom-container', // zoom模式下的类名
 
             /**
              * 监视器，观察者
@@ -389,6 +391,7 @@
             lastSlideMessage: 'This is the last slide',
             paginationBulletMessage: 'Go to slide {{index}}',
             // Callbacks
+            // http://www.swiper.com.cn/api/callbacks/2015/0308/220.html
             runCallbacksOnInit: true
             /*
             Callbacks:
@@ -520,6 +523,7 @@
             </script>
           ===========================*/
         s.currentBreakpoint = undefined;
+        // 获取触发的断点
         s.getActiveBreakpoint = function () {
             //Get breakpoint for window width
             if (!s.params.breakpoints) return false;
@@ -544,6 +548,7 @@
             }
             return breakpoint || 'max';
         };
+        // 更新断点下的参数值
         s.setBreakpoint = function () {
             //Set breakpoint for window width and update parameters
             var breakpoint = s.getActiveBreakpoint();
@@ -565,9 +570,9 @@
         }
 
         /*=========================
-          Preparation - Define Container, Wrapper and Pagination
+          Preparation - Define Container, Wrapper and Pagination 准备
           ===========================*/
-        s.container = $(container);
+        s.container = $(container); // 传入的container容器元素
         if (s.container.length === 0) return;
         if (s.container.length > 1) {
             var swipers = [];
@@ -600,6 +605,8 @@
             s.params.watchSlidesProgress = true;
         }
         // Max resistance when touchReleaseOnEdges
+        // 当滑动到Swiper的边缘时释放滑动，可以用于同向Swiper的嵌套（移动端触摸有效）。
+        // http://www.swiper.com.cn/api/touch/2016/1106/327.html
         if (s.params.touchReleaseOnEdges) {
             // 抵抗率。边缘抵抗力的大小比例。值越小抵抗越大越难将slide拖离边缘，0时完全无法拖离。
             s.params.resistanceRatio = 0;
@@ -641,7 +648,7 @@
 
         // Grab Cursor 捕获光标手势图标
         if (s.params.grabCursor && s.support.touch) {
-            s.params.grabCursor = false;
+            s.params.grabCursor = false; // 移动端不需要
         }
 
         // Wrapper 包裹，包装器
@@ -695,6 +702,7 @@
         }
 
         // Wrong RTL support
+        // 错误支持RTL的情况
         if (s.rtl) {
             s.wrongRTL = s.wrapper.css('display') === '-webkit-box';
         }
@@ -712,13 +720,13 @@
         // Add classes 统一添加样式类
         s.container.addClass(s.classNames.join(' '));
 
-        // Translate
+        // Translate 位移
         s.translate = 0;
 
-        // Progress
+        // Progress 进度
         s.progress = 0;
 
-        // Velocity
+        // Velocity 速度
         s.velocity = 0;
 
         /*=========================
@@ -815,6 +823,7 @@
                 onReady();
             }
         };
+        // 预加载
         s.preloadImages = function () {
             s.imagesToLoad = s.container.find('img');
             function _onReady() {
@@ -837,8 +846,11 @@
         s.autoplaying = false;
         s.autoplayPaused = false;
         function autoplay() {
+            // 自动切换的时间间隔（单位ms），不设定该参数slide不会自动切换。
             var autoplayDelay = s.params.autoplay;
             var activeSlide = s.slides.eq(s.activeIndex);
+            // 你还可以在某个slide上设置单独的停留时间，例<div class="swiper-slide" data-swiper-autoplay="2000">
+            // http://www.swiper.com.cn/api/basic/2014/1213/16.html
             if (activeSlide.attr('data-swiper-autoplay')) {
                 autoplayDelay = activeSlide.attr('data-swiper-autoplay') || s.params.autoplay;
             }
@@ -913,6 +925,7 @@
         /*=========================
           Slider/slides sizes
           ===========================*/
+        // 自动高度。设置为true时，wrapper和container会随着当前slide的高度而发生变化。
         s.updateAutoHeight = function () {
             var activeSlides = [];
             var newHeight = 0;
@@ -920,6 +933,7 @@
 
             // Find slides currently in view
             if(s.params.slidesPerView !== 'auto' && s.params.slidesPerView > 1) {
+                // Math.ceil()向上取整
                 for (i = 0; i < Math.ceil(s.params.slidesPerView); i++) {
                     var index = s.activeIndex + i;
                     if(index > s.slides.length) break;
