@@ -294,12 +294,22 @@
             // http://www.swiper.com.cn/api/Clicks/2015/0308/207.html
             slideToClickedSlide: false,
             // Lazy Loading
+            // 设为true开启图片延迟加载，使preloadImages无效。
+            // 需要将图片img标签的src改写成data-src，并且增加类名swiper-lazy。
+            // 背景图的延迟加载则增加属性data-background（3.0.7开始启用）。
+            // http://www.swiper.com.cn/api/Images/2015/0308/213.html
             lazyLoading: false,
+            // 设置为true允许将延迟加载应用到最接近的slide的图片（前一个和后一个slide）。
             lazyLoadingInPrevNext: false,
+            // 设置在延迟加载图片时提前多少个slide。个数不可少于slidesPerView的数量。
+            // 默认为1，提前1个slide加载图片，例如切换到第三个slide时加载第四个slide里面的图片。
             lazyLoadingInPrevNextAmount: 1,
+            // 默认当过渡到slide后开始加载图片，如果你想在过渡一开始就加载，设置为true
             lazyLoadingOnTransitionStart: false,
             // Images
+            // 默认为true，Swiper会强制加载所有图片。
             preloadImages: true,
+            // 当所有的内嵌图像（img标签）加载完成后Swiper会重新初始化。使用此选项需要先开启preloadImages: true
             updateOnImagesReady: true,
             /**
              * loop 循环
@@ -830,11 +840,13 @@
                 if (typeof s === 'undefined' || s === null || !s) return;
                 if (s.imagesLoaded !== undefined) s.imagesLoaded++;
                 if (s.imagesLoaded === s.imagesToLoad.length) {
+                    // 当所有的内嵌图像（img标签）加载完成后Swiper会重新初始化。使用此选项需要先开启preloadImages: true
                     if (s.params.updateOnImagesReady) s.update();
                     s.emit('onImagesReady', s);
                 }
             }
             for (var i = 0; i < s.imagesToLoad.length; i++) {
+                // https://developer.mozilla.org/zh-CN/docs/Web/API/HTMLImageElement
                 s.loadImage(s.imagesToLoad[i], (s.imagesToLoad[i].currentSrc || s.imagesToLoad[i].getAttribute('src')), (s.imagesToLoad[i].srcset || s.imagesToLoad[i].getAttribute('srcset')), s.imagesToLoad[i].sizes || s.imagesToLoad[i].getAttribute('sizes'), true, _onReady);
             }
         };
@@ -1908,8 +1920,10 @@
         // Touch handlers
         var isTouchEvent, startMoving;
         s.onTouchStart = function (e) {
+            // e.originalEvent jquery包装的e
             if (e.originalEvent) e = e.originalEvent;
             isTouchEvent = e.type === 'touchstart';
+            // 这里的which是jquery的语法，3代表鼠标的右键
             if (!isTouchEvent && 'which' in e && e.which === 3) return;
             if (s.params.noSwiping && findElementInEvent(e, '.' + s.params.noSwipingClass)) {
                 s.allowClick = true;
@@ -3156,7 +3170,7 @@
 
 
         /*=========================
-          Images Lazy Loading
+          Images Lazy Loading 懒加载
           ===========================*/
         s.lazy = {
             initialImageLoaded: false,
@@ -3280,7 +3294,6 @@
                 }
             }
         };
-
 
         /*=========================
           Scrollbar 滚动条

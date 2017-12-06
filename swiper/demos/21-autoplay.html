@@ -25,13 +25,13 @@
     .swiper-container {
         width: 100%;
         height: 100%;
-        
+
     }
     .swiper-slide {
         text-align: center;
         font-size: 18px;
         background: #fff;
-        
+
         /* Center slide text vertically */
         display: -webkit-box;
         display: -ms-flexbox;
@@ -71,7 +71,9 @@
     </div>
 
     <!-- Swiper JS -->
-    <script src="../dist/js/swiper.min.js"></script>
+    <script src="../dist/js/zepto.min.js"></script>
+    <script src="../dist/js/swiper.zepto.js"></script>
+    <!-- <script src="../dist/js/swiper.min.js"></script> -->
 
     <!-- Initialize Swiper -->
     <script>
@@ -83,7 +85,8 @@
         spaceBetween: 30,
         centeredSlides: true,
         autoplay: 2500,
-        autoplayDisableOnInteraction: false
+        autoplayDisableOnInteraction: false,
+        loop: true
     });
     </script>
 </body>

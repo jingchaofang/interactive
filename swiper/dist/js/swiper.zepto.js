@@ -1,5 +1,11 @@
 /**
  * 移动端Swiper
+ * 去掉了视差效果parallax，去掉了双向控制controller
+ * 用到的es6语法：includes
+ * 需要扩展zepto的data功能
+ * 特别点：passiveListener提升页面滑动的流畅度
+ * 由于flex-wrap的兼容局限性，不支持多行
+ * 由于flex-shrink的兼容局限性，无法使用
  */
 (function () {
     'use strict';
@@ -21,6 +27,7 @@
             direction: 'horizontal',
             touchEventsTarget: 'container',
             initialSlide: 0, // Index number of initial slide
+            // 滑动速度，即slider自动滑动开始到结束的时间（单位ms），也是触摸滑动时释放至贴合的时间
             speed: 300, // Duration of transition between slides (in ms)
             // autoplay
             autoplay: false, // 自动切换的时间间隔（单位ms），不设定该参数slide不会自动切换。
@@ -29,7 +36,9 @@
             // http://www.swiper.com.cn/api/basic/2016/0125/295.html
             autoplayStopOnLast: false,
             // To support iOS's swipe-to-go-back gesture (when being used in-app, with UIWebView).
+            // 设置为true开启IOS的UIWebView环境下的边缘探测。如果拖动是从屏幕边缘开始则不触发swiper。
             iOSEdgeSwipeDetection: false,
+            // IOS的UIWebView环境下的边缘探测距离。如果拖动小于边缘探测距离则不触发swiper。
             iOSEdgeSwipeThreshold: 20,
             // Free mode
             // 默认为false，普通模式：slide滑动时只滑动一格，并自动贴合wrapper，设置为true则变为free模式，slide会根据惯性滑动且不会贴合。
@@ -116,8 +125,14 @@
             hashnav: false,
             hashnavWatchState: false,
             // History
+            // 设为任意string则开启history并以这个string为URL前缀。
+            // 在slide切换时无刷新更换URL和浏览器的history.state(pushState)。这样每个slide都会拥有一个自己的URL。
+            // 使用history还必需在slide上增加一个属性data-history，例<div class="swiper-slide" data-history="slide1"></div>
+            // 开启history会取消hashnav。
             history: false,
             // Commong Nav State
+            // 使用replaceState（window.history.replaceState）方法代替hashnav的hash方法（document.location.hash）
+            // 或者history的pushState（window.history.replaceState）方法。
             replaceState: false,
             // Breakpoints
             // 断点设定：根据屏幕宽度设置某参数为不同的值，类似于响应式布局的media screen。
@@ -148,10 +163,13 @@
             // http://www.swiper.com.cn/api/Slides_grid/2014/1217/27.html
             slidesPerGroup: 1,
             // 设定为true时，活动块会居中，而不是默认状态下的居左。
+            // http://www.swiper.com.cn/api/Slides_grid/2014/1217/50.html
             centeredSlides: false,
             // 设定slide与左边框的预设偏移量（单位px）
+            // http://www.swiper.com.cn/api/Slides_grid/2015/0722/282.html
             slidesOffsetBefore: 0, // in px
             // 设定slide与右边框的预设偏移量（单位px）
+            // http://www.swiper.com.cn/api/Slides_grid/2015/0722/283.html
             slidesOffsetAfter: 0, // in px
             // Round length
             // 设定为true将slide的宽和高取整(四舍五入)以防止某些分辨率的屏幕上文字或边界(border)模糊。
@@ -161,6 +179,8 @@
              * Touches 触发条件
              */
             // 触摸距离与slide滑动距离的比率
+            // 应用实例：利用touchRatio制作与拖动方向相反的Swiper
+            // http://www.swiper.com.cn/api/touch/2014/1217/55.html
             touchRatio: 1,
             // 允许触发拖动的角度值。默认45度，即使触摸方向不是完全水平也能拖动slide。
             // http://www.swiper.com.cn/api/touch/2015/0308/201.html
@@ -177,11 +197,12 @@
             followFinger: true,
             // 值为true时，slide无法拖动，只能使用扩展API函数例如slideNext() 或slidePrev()或slideTo()等改变slides滑动。
             onlyExternal: false,
-            // 拖动的临界值（单位为px），如果触摸距离小于该值滑块不会被拖动。
+            // 拖动的临界值，阀值（单位为px），如果触摸距离小于该值滑块不会被拖动。
             threshold: 0,
             // true时阻止touchmove冒泡事件。
             touchMoveStopPropagation: true,
             // 当滑动到Swiper的边缘时释放滑动，可以用于同向Swiper的嵌套（移动端触摸有效）。
+            // http://www.swiper.com.cn/api/touch/2016/1106/327.html
             touchReleaseOnEdges: false,
             // Unique Navigation Elements
             // 独立分页元素，当启用（默认）并且分页元素的传入值为字符串时，swiper会优先查找子元素匹配这些元素。可应用于分页器，按钮和滚动条。
@@ -249,7 +270,7 @@
 
             /**
              * Clicks 点击
-             *
+             */
             // 当swiper在触摸时阻止默认事件（preventDefault），用于防止触摸时触发链接跳转。
             // http://www.swiper.com.cn/api/Clicks/2014/1217/40.html
             preventClicks: true,
@@ -260,12 +281,22 @@
             // http://www.swiper.com.cn/api/Clicks/2015/0308/207.html
             slideToClickedSlide: false,
             // Lazy Loading
+            // 设为true开启图片延迟加载，使preloadImages无效。
+            // 需要将图片img标签的src改写成data-src，并且增加类名swiper-lazy。
+            // 背景图的延迟加载则增加属性data-background（3.0.7开始启用）。
+            // http://www.swiper.com.cn/api/Images/2015/0308/213.html
             lazyLoading: false,
+            // 设置为true允许将延迟加载应用到最接近的slide的图片（前一个和后一个slide）。
             lazyLoadingInPrevNext: false,
+            // 设置在延迟加载图片时提前多少个slide。个数不可少于slidesPerView的数量。
+            // 默认为1，提前1个slide加载图片，例如切换到第三个slide时加载第四个slide里面的图片。
             lazyLoadingInPrevNextAmount: 1,
+            // 默认当过渡到slide后开始加载图片，如果你想在过渡一开始就加载，设置为true
             lazyLoadingOnTransitionStart: false,
             // Images
+            // 默认为true，Swiper会强制加载所有图片。
             preloadImages: true,
+            // 当所有的内嵌图像（img标签）加载完成后Swiper会重新初始化。使用此选项需要先开启preloadImages: true
             updateOnImagesReady: true,
             /**
              * loop 循环
@@ -280,10 +311,6 @@
             loopAdditionalSlides: 0,
             // 在loop模式下使用slidesPerview:'auto',还需使用该参数设置所要用到的loop个数。
             loopedSlides: null,
-            // Control
-            control: undefined,
-            controlInverse: false,
-            controlBy: 'slide', //or 'container'
             // 使你的活动块指示为最左边的那个slide（没开启centeredSlides时）
             // http://www.swiper.com.cn/api/Controller/2016/1105/322.html
             normalizeSlideIndex: true,
@@ -295,6 +322,7 @@
             // 设置为false可禁止向右或下滑动。作用类似mySwiper.lockSwipeToNext()
             allowSwipeToNext: true,
             // CSS选择器或者HTML元素。你只能拖动它进行swiping。
+            // http://www.swiper.com.cn/api/Swiping/2015/0308/208.html
             swipeHandler: null, //'.swipe-handler',
             // 设为true时，可以在slide上（或其他元素）增加类名'swiper-no-swiping'，使该slide无法拖动，希望文字被选中时可以考虑使用。
             // 该类名可通过noSwipingClass修改。
@@ -347,15 +375,6 @@
             // 将observe应用于Swiper的父元素。当Swiper的父元素变化时，例如window.resize，Swiper更新。
             // http://www.swiper.com.cn/api/Observer/2015/0308/219.html
             observeParents: false,
-            // Accessibility
-            // 辅助，无障碍阅读。开启本参数为屏幕阅读器添加语音提示等信息，方便视觉障碍者。基于ARIA标准。
-            // http://www.swiper.com.cn/api/basic/2015/0328/268.html
-            a11y: false,
-            prevSlideMessage: 'Previous slide',
-            nextSlideMessage: 'Next slide',
-            firstSlideMessage: 'This is the first slide',
-            lastSlideMessage: 'This is the last slide',
-            paginationBulletMessage: 'Go to slide {{index}}',
             // Callbacks
             // http://www.swiper.com.cn/api/callbacks/2015/0308/220.html
             // 初始化时触发 [Transition/SlideChange] [Start/End] 回调函数。这些回调函数会在下次初始化时被清除如果initialSlide不为0。
@@ -405,7 +424,6 @@
             if (typeof params[param] === 'object' && params[param] !== null && !(params[param].nodeType
                 || params[param] === window
                 || params[param] === document
-                || (typeof Dom7 !== 'undefined' && params[param] instanceof Dom7)
                 || (typeof jQuery !== 'undefined' && params[param] instanceof jQuery))
             ) {
                 originalParams[param] = {};
@@ -507,8 +525,9 @@
             var breakpoint = s.getActiveBreakpoint();
             if (breakpoint && s.currentBreakpoint !== breakpoint) {
                 var breakPointsParams = breakpoint in s.params.breakpoints ? s.params.breakpoints[breakpoint] : s.originalParams;
+                // loop模式下如果slidesPerView设置为'auto'还需要设置另外一个参数loopedSlides。
                 var needsReLoop = s.params.loop && (breakPointsParams.slidesPerView !== s.params.slidesPerView);
-                for ( var param in breakPointsParams ) {
+                for (var param in breakPointsParams ) {
                     s.params[param] = breakPointsParams[param];
                 }
                 s.currentBreakpoint = breakpoint;
@@ -517,13 +536,13 @@
                 }
             }
         };
-        // Set breakpoint on load
+        // Set breakpoint on load 加载时设置断点
         if (s.params.breakpoints) {
             s.setBreakpoint();
         }
 
         /*=========================
-          Preparation - Define Container, Wrapper and Pagination 准备
+          Preparation - Define Container, Wrapper and Pagination 准备阶段
           ===========================*/
         s.container = $(container); // 传入的container容器元素
         if (s.container.length === 0) return;
@@ -545,6 +564,7 @@
         if (s.params.freeMode) {
             s.classNames.push(s.params.containerModifierClass + 'free-mode');
         }
+        // 不支持flexbox，特别是flex-wrap安卓4.4才支持
         if (!s.support.flexbox) {
             s.classNames.push(s.params.containerModifierClass + 'no-flexbox');
             // 多行布局里面每列的slide数量
@@ -554,6 +574,9 @@
             s.classNames.push(s.params.containerModifierClass + 'autoheight');
         }
         // Enable slides progress when required
+        // 开启watchSlidesVisibility选项前需要先开启watchSlidesProgress，
+        // 如果开启了watchSlidesVisibility，则会在每个可见slide增加一个classname，默认为'swiper-slide-visible'。
+        // http://www.swiper.com.cn/api/Progress/2015/0308/192.html
         if (s.params.watchSlidesVisibility) {
             s.params.watchSlidesProgress = true;
         }
@@ -579,15 +602,15 @@
         if (s.params.effect !== 'slide') {
             s.classNames.push(s.params.containerModifierClass + s.params.effect);
         }
-        if (s.params.effect === 'cube') {
-            s.params.resistanceRatio = 0;
-            s.params.slidesPerView = 1;
-            s.params.slidesPerColumn = 1;
-            s.params.slidesPerGroup = 1;
-            s.params.centeredSlides = false;
-            s.params.spaceBetween = 0;
-            s.params.virtualTranslate = true;
-        }
+        // if (s.params.effect === 'cube') {
+        //     s.params.resistanceRatio = 0;
+        //     s.params.slidesPerView = 1;
+        //     s.params.slidesPerColumn = 1;
+        //     s.params.slidesPerGroup = 1;
+        //     s.params.centeredSlides = false;
+        //     s.params.spaceBetween = 0;
+        //     s.params.virtualTranslate = true;
+        // }
         if (s.params.effect === 'fade' || s.params.effect === 'flip') {
             s.params.slidesPerView = 1;
             s.params.slidesPerColumn = 1;
@@ -639,7 +662,7 @@
         };
         // s.isH = isH;
 
-        // RTL
+        // RTL 支持
         // https://developer.mozilla.org/zh-CN/docs/Web/HTML/Global_attributes/dir
         // ltr, 指从左到右，用于那种从左向右书写的语言（比如英语）；
         // rtl, 指从右到左，用于那种从右向左书写的语言（比如阿拉伯语）；
@@ -708,6 +731,7 @@
             // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Math/floor
             return Math.floor(a);
         }
+
         /*=========================
           Update on Images Ready
           ===========================*/
@@ -748,14 +772,17 @@
                 if (typeof s === 'undefined' || s === null || !s) return;
                 if (s.imagesLoaded !== undefined) s.imagesLoaded++;
                 if (s.imagesLoaded === s.imagesToLoad.length) {
+                    // 当所有的内嵌图像（img标签）加载完成后Swiper会重新初始化。使用此选项需要先开启preloadImages: true
                     if (s.params.updateOnImagesReady) s.update();
                     s.emit('onImagesReady', s);
                 }
             }
             for (var i = 0; i < s.imagesToLoad.length; i++) {
+                // https://developer.mozilla.org/zh-CN/docs/Web/API/HTMLImageElement
                 s.loadImage(s.imagesToLoad[i], (s.imagesToLoad[i].currentSrc || s.imagesToLoad[i].getAttribute('src')), (s.imagesToLoad[i].srcset || s.imagesToLoad[i].getAttribute('srcset')), s.imagesToLoad[i].sizes || s.imagesToLoad[i].getAttribute('sizes'), true, _onReady);
             }
         };
+
 
         /*=========================
           Autoplay 自动播放
@@ -763,6 +790,9 @@
         s.autoplayTimeoutId = undefined;
         s.autoplaying = false;
         s.autoplayPaused = false;
+        /**
+         * 自动播放
+         */
         function autoplay() {
             // 自动切换的时间间隔（单位ms），不设定该参数slide不会自动切换。
             var autoplayDelay = s.params.autoplay;
@@ -773,6 +803,7 @@
                 autoplayDelay = activeSlide.attr('data-swiper-autoplay') || s.params.autoplay;
             }
             s.autoplayTimeoutId = setTimeout(function () {
+                // 循环播放
                 if (s.params.loop) {
                     s.fixLoop();
                     s._slideNext();
@@ -786,6 +817,7 @@
                         s.emit('onAutoplay', s);
                     }
                     else {
+                        // autoplayStopOnLast如果设置为true，当切换到最后一个slide时停止自动切换。（loop模式下无效）。
                         if (!params.autoplayStopOnLast) {
                             s._slideTo(0);
                             s.emit('onAutoplay', s);
@@ -797,15 +829,18 @@
                 }
             }, autoplayDelay);
         }
+        // 开启自动播放
         s.startAutoplay = function () {
             if (typeof s.autoplayTimeoutId !== 'undefined') return false;
             if (!s.params.autoplay) return false;
             if (s.autoplaying) return false;
+            // 自动播放中
             s.autoplaying = true;
             // 触发回调函数
             s.emit('onAutoplayStart', s);
             autoplay();
         };
+        // 停止播放
         s.stopAutoplay = function (internal) {
             if (!s.autoplayTimeoutId) return;
             if (s.autoplayTimeoutId) clearTimeout(s.autoplayTimeoutId);
@@ -814,6 +849,7 @@
             // 触发回调函数
             s.emit('onAutoplayStop', s);
         };
+        // 暂停播放，speed切换速度transition duration (in ms)
         s.pauseAutoplay = function (speed) {
             if (s.autoplayPaused) return;
             if (s.autoplayTimeoutId) clearTimeout(s.autoplayTimeoutId);
@@ -837,7 +873,7 @@
             }
         };
         /*=========================
-          Min/Max Translate 最小最大位移
+          Min/Max Translate 最小最大位移,负值
           ===========================*/
         s.minTranslate = function () {
             return (-s.snapGrid[0]);
@@ -860,7 +896,7 @@
                 for (i = 0; i < Math.ceil(s.params.slidesPerView); i++) {
                     var index = s.activeIndex + i;
                     if(index > s.slides.length) break;
-                    activeSlides.push(s.slides.eq(index)[0]);
+                    activeSlides.push(s.slides.eq(index)[0]); // zepto可改为get(0)
                 }
             } else {
                 activeSlides.push(s.slides.eq(s.activeIndex)[0]);
@@ -919,7 +955,7 @@
             s.snapGrid = [];
             // 滑块的位置集数组
             s.slidesGrid = [];
-            // 滑块的尺寸集数组
+            // 滑块的尺寸集(宽或高)数组
             s.slidesSizesGrid = [];
             // slide间距
             var spaceBetween = s.params.spaceBetween;
@@ -1207,6 +1243,7 @@
             if (s.rtl) offsetCenter = translate;
 
             // Visible Slides
+            // http://www.swiper.com.cn/api/namespace/2014/1217/75.html
             s.slides.removeClass(s.params.slideVisibleClass);
             for (var i = 0; i < s.slides.length; i++) {
                 var slide = s.slides[i];
@@ -1230,14 +1267,15 @@
                 slide.progress = s.rtl ? -slideProgress : slideProgress;
             }
         };
+        // 更新进度
         s.updateProgress = function (translate) {
             if (typeof translate === 'undefined') {
                 translate = s.translate || 0;
             }
             // 最大最小位移差
             var translatesDiff = s.maxTranslate() - s.minTranslate();
-            var wasBeginning = s.isBeginning;
-            var wasEnd = s.isEnd;
+            var wasBeginning = s.isBeginning; // 上一次的状态
+            var wasEnd = s.isEnd; // 上一次的状态
             if (translatesDiff === 0) {
                 s.progress = 0;
                 s.isBeginning = s.isEnd = true;
@@ -1248,8 +1286,14 @@
                 s.isBeginning = s.progress <= 0;
                 s.isEnd = s.progress >= 1;
             }
-            if (s.isBeginning && !wasBeginning) s.emit('onReachBeginning', s);
-            if (s.isEnd && !wasEnd) s.emit('onReachEnd', s);
+            if (s.isBeginning && !wasBeginning) {
+                // 回调函数
+                s.emit('onReachBeginning', s);
+            }
+            if (s.isEnd && !wasEnd) {
+                // 回调函数
+                s.emit('onReachEnd', s);
+            }
             // 开启这个参数来计算每个slide的progress(进度、进程)，Swiper的progress无需设置即开启。
             // swiper的progress其实就是wrapper的translate值的百分值
             if (s.params.watchSlidesProgress) s.updateSlidesProgress(translate);
@@ -1507,9 +1551,7 @@
             }
             if (updateTranslate) {
                 var translated;
-                if (s.controller && s.controller.spline) {
-                    s.controller.spline = undefined;
-                }
+
                 if (s.params.freeMode) {
                     forceSetTranslate();
                     if (s.params.autoHeight) {
@@ -1537,6 +1579,7 @@
           Resize Handler
           ===========================*/
         s.onResize = function (forceUpdatePagination) {
+            // 回调
             if (s.params.onBeforeResize) s.params.onBeforeResize(s);
             //Breakpoints
             if (s.params.breakpoints) {
@@ -1554,9 +1597,7 @@
             if (s.params.scrollbar && s.scrollbar) {
                 s.scrollbar.set();
             }
-            if (s.controller && s.controller.spline) {
-                s.controller.spline = undefined;
-            }
+
             var slideChangedBySlideTo = false;
             if (s.params.freeMode) {
                 var newTranslate = Math.min(Math.max(s.translate, s.maxTranslate()), s.minTranslate());
@@ -1583,47 +1624,44 @@
             // Return locks after resize
             s.params.allowSwipeToPrev = allowSwipeToPrev;
             s.params.allowSwipeToNext = allowSwipeToNext;
+            // 回调
             if (s.params.onAfterResize) s.params.onAfterResize(s);
         };
 
         /*=========================
           Events 事件定义
           ===========================*/
-        s.touchEvents = {
-            start : 'touchstart',
-            move : 'touchmove',
-            end : 'touchend'
-        };
-
         // Attach/detach events 绑定或解绑
+        // 初始化事件
         s.initEvents = function (detach) {
             var actionDom = detach ? 'off' : 'on';
             var action = detach ? 'removeEventListener' : 'addEventListener';
             var touchEventsTarget = s.params.touchEventsTarget === 'container' ? s.container[0] : s.wrapper[0];
             var target = touchEventsTarget;
             // 动作捕捉，冒泡还是捕获
+            // nested用于嵌套相同方向的swiper时，当切换到子swiper时停止父swiper的切换。
+            // 请将子swiper的nested设置为true。
+            // 由于需要在slideChangeEnd时判断作用块，因此快速滑动时这个选项无效。
             var moveCapture = s.params.nested ? true : false;
 
             //Touch Events
-            var passiveListener = s.touchEvents.start === 'touchstart' && s.support.passiveListener && s.params.passiveListeners ? {passive: true, capture: false} : false;
-            touchEventsTarget[action](s.touchEvents.start, s.onTouchStart, passiveListener);
-            touchEventsTarget[action](s.touchEvents.move, s.onTouchMove, moveCapture);
-            touchEventsTarget[action](s.touchEvents.end, s.onTouchEnd, passiveListener);
+            var passiveListener = s.support.passiveListener && s.params.passiveListeners ? {passive: true, capture: false} : false;
+
+            touchEventsTarget[action]('touchstart', s.onTouchStart, passiveListener);
+            touchEventsTarget[action]('touchmove', s.onTouchMove, moveCapture);
+            touchEventsTarget[action]('touchend', s.onTouchEnd, passiveListener);
 
             window[action]('resize', s.onResize);
 
             // Next, Prev, Index
             if (s.params.nextButton && s.nextButton && s.nextButton.length > 0) {
                 s.nextButton[actionDom]('click', s.onClickNext);
-                if (s.params.a11y && s.a11y) s.nextButton[actionDom]('keydown', s.a11y.onEnterKey);
             }
             if (s.params.prevButton && s.prevButton && s.prevButton.length > 0) {
                 s.prevButton[actionDom]('click', s.onClickPrev);
-                if (s.params.a11y && s.a11y) s.prevButton[actionDom]('keydown', s.a11y.onEnterKey);
             }
             if (s.params.pagination && s.params.paginationClickable) {
                 s.paginationContainer[actionDom]('click', '.' + s.params.bulletClass, s.onClickIndex);
-                if (s.params.a11y && s.a11y) s.paginationContainer[actionDom]('keydown', '.' + s.params.bulletClass, s.a11y.onEnterKey);
             }
 
             // Prevent Links Clicks
@@ -1689,10 +1727,10 @@
           Handle Touches 处理触摸事件
           ===========================*/
         /**
-         * 检测触发事件的对象或其父类是否为指定的选择器并返回
+         * 检测触发事件的对象或其父类是否为指定的选择器并返回该选择器
          * @param  {[type]} e        指代事件
          * @param  {[type]} selector 指定选择器
-         * @return {[type]}          制定选择器元素或undefined
+         * @return {[type]}          指定选择器元素或undefined
          */
         function findElementInEvent(e, selector) {
             var el = $(e.target);
@@ -1776,22 +1814,26 @@
                 }
             }
         };
-
+        // 触摸状态
         var isTouched;
         var isMoved;
+        // 允许touch回调
         var allowTouchCallbacks;
         var touchStartTime;
+        // 正在滚动
         var isScrolling;
         var currentTranslate;
         var startTranslate;
+        // 允许阈移
         var allowThresholdMove;
         // Form elements to match
         var formElements = 'input, select, textarea, button, video';
         // Last click time
         var lastClickTime = Date.now();
         var clickTimeout;
-        // Velocities
+        // Velocities 速度
         var velocities = [];
+        // 允许动量反弹
         var allowMomentumBounce;
 
         // Animating Flag 正在动画过程中标记
@@ -1810,40 +1852,51 @@
         var isTouchEvent;
         var startMoving;
         s.onTouchStart = function (e) {
-            if (e.originalEvent) e = e.originalEvent;
+            // https://developer.mozilla.org/zh-CN/docs/Web/API/Event/type
             isTouchEvent = e.type === 'touchstart';
-            if (!isTouchEvent && 'which' in e && e.which === 3) return;
+            if (!isTouchEvent) return;
+            // noSwiping设为true时，可以在slide上（或其他元素）增加类名'swiper-no-swiping'，使该slide无法拖动，希望文字被选中时可以考虑使用。
+            // 该类名可通过noSwipingClass修改。
             if (s.params.noSwiping && findElementInEvent(e, '.' + s.params.noSwipingClass)) {
+                // 允许点击
                 s.allowClick = true;
                 return;
             }
+            // CSS选择器或者HTML元素。你只能拖动它进行swiping。
+            // http://www.swiper.com.cn/api/Swiping/2015/0308/208.html
             if (s.params.swipeHandler) {
                 if (!findElementInEvent(e, s.params.swipeHandler)) return;
             }
 
-            var startX = s.touches.currentX = e.type === 'touchstart' ? e.targetTouches[0].pageX : e.pageX;
-            var startY = s.touches.currentY = e.type === 'touchstart' ? e.targetTouches[0].pageY : e.pageY;
+            var startX = s.touches.currentX = e.targetTouches[0].pageX;
+            var startY = s.touches.currentY = e.targetTouches[0].pageY;
 
             // Do NOT start if iOS edge swipe is detected. Otherwise iOS app (UIWebView) cannot swipe-to-go-back anymore
+            // iOSEdgeSwipeDetection设置为true开启IOS的UIWebView环境下的边缘探测。如果拖动是从屏幕边缘开始则不触发swiper。
+            // iOSEdgeSwipeThreshold IOS的UIWebView环境下的边缘探测距离。如果拖动小于边缘探测距离则不触发swiper。
             if(s.device.ios && s.params.iOSEdgeSwipeDetection && startX <= s.params.iOSEdgeSwipeThreshold) {
                 return;
             }
-
             isTouched = true;
             isMoved = false;
+            // 允许touch回调
             allowTouchCallbacks = true;
+            // 在滚动状态
             isScrolling = undefined;
             startMoving = undefined;
             s.touches.startX = startX;
             s.touches.startY = startY;
+            // 触摸开始时间
             touchStartTime = Date.now();
             s.allowClick = true;
             s.updateContainerSize();
             s.swipeDirection = undefined;
+            // threshold拖动的临界值，阀值（单位为px），如果触摸距离小于该值滑块不会被拖动。
             if (s.params.threshold > 0) allowThresholdMove = false;
             if (e.type !== 'touchstart') {
                 var preventDefault = true;
                 if ($(e.target).is(formElements)) preventDefault = false;
+                // https://developer.mozilla.org/zh-CN/docs/Web/API/Document/activeElement
                 if (document.activeElement && $(document.activeElement).is(formElements)) {
                     document.activeElement.blur();
                 }
@@ -1855,23 +1908,25 @@
         };
 
         s.onTouchMove = function (e) {
-            if (e.originalEvent) e = e.originalEvent;
-            if (isTouchEvent && e.type === 'mousemove') return;
+            // 通过嵌套的滑块阻止
             if (e.preventedByNestedSwiper) {
-                s.touches.startX = e.type === 'touchmove' ? e.targetTouches[0].pageX : e.pageX;
-                s.touches.startY = e.type === 'touchmove' ? e.targetTouches[0].pageY : e.pageY;
+                s.touches.startX = e.targetTouches[0].pageX;
+                s.touches.startY = e.targetTouches[0].pageY;
                 return;
             }
+            // onlyExternal值为true时，slide无法拖动，只能使用扩展API函数例如slideNext()或slidePrev()或slideTo()等改变slides滑动。
             if (s.params.onlyExternal) {
                 // isMoved = true;
                 s.allowClick = false;
                 if (isTouched) {
-                    s.touches.startX = s.touches.currentX = e.type === 'touchmove' ? e.targetTouches[0].pageX : e.pageX;
-                    s.touches.startY = s.touches.currentY = e.type === 'touchmove' ? e.targetTouches[0].pageY : e.pageY;
+                    s.touches.startX = s.touches.currentX = e.targetTouches[0].pageX;
+                    s.touches.startY = s.touches.currentY = e.targetTouches[0].pageY;
                     touchStartTime = Date.now();
                 }
                 return;
             }
+            // touchReleaseOnEdges当滑动到Swiper的边缘时释放滑动，可以用于同向Swiper的嵌套（移动端触摸有效）。
+            // 注意s.maxTranslate()和s.minTranslate()都是负值
             if (isTouchEvent && s.params.touchReleaseOnEdges && !s.params.loop) {
                 if (!s.isHorizontal()) {
                     // Vertical
@@ -1898,13 +1953,15 @@
                     return;
                 }
             }
+            // 允许touch回调
             if (allowTouchCallbacks) {
                 s.emit('onTouchMove', s, e);
             }
+            // 非一点触控
             if (e.targetTouches && e.targetTouches.length > 1) return;
 
-            s.touches.currentX = e.type === 'touchmove' ? e.targetTouches[0].pageX : e.pageX;
-            s.touches.currentY = e.type === 'touchmove' ? e.targetTouches[0].pageY : e.pageY;
+            s.touches.currentX = e.targetTouches[0].pageX;
+            s.touches.currentY = e.targetTouches[0].pageY;
 
             if (typeof isScrolling === 'undefined') {
                 var touchAngle;
@@ -1912,15 +1969,24 @@
                     isScrolling = false;
                 }
                 else {
+                    // Math.atan2(y, x)  https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Math/atan2
+                    // atan2 方法返回一个 -pi 到 pi 之间的数值，表示点 (x, y) 对应的偏移角度。
+                    // 这是一个逆时针角度，以弧度为单位，正X轴和点 (x, y) 与原点连线 之间。注意此函数接受的参数：先传递 y 坐标，然后是 x 坐标。
+                    // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Math/abs
                     touchAngle = Math.atan2(Math.abs(s.touches.currentY - s.touches.startY), Math.abs(s.touches.currentX - s.touches.startX)) * 180 / Math.PI;
+                    // touchAngle允许触发拖动的角度值。默认45度，即使触摸方向不是完全水平也能拖动slide。
+                    // 只要在这个角度内触摸Swiper都可拖动
                     isScrolling = s.isHorizontal() ? touchAngle > s.params.touchAngle : (90 - touchAngle > s.params.touchAngle);
                 }
             }
             if (isScrolling) {
+                // http://www.swiper.com.cn/api/callbacks/2015/0308/223.html
+                // 如果拖动角度大于允许角度触发,当手指触碰Swiper并且没有按照direction设定的方向移动时执行,此时页面滚动
                 s.emit('onTouchMoveOpposite', s, e);
             }
             if (typeof startMoving === 'undefined') {
                 if (s.touches.currentX !== s.touches.startX || s.touches.currentY !== s.touches.startY) {
+                    // 开始移动
                     startMoving = true;
                 }
             }
@@ -1933,6 +1999,7 @@
                 return;
             }
             s.allowClick = false;
+            // 回调函数，手指触碰Swiper并拖动slide时执行。
             s.emit('onSliderMove', s, e);
             e.preventDefault();
             if (s.params.touchMoveStopPropagation && !s.params.nested) {
@@ -2290,21 +2357,20 @@
         /**
          * Swiper切换到指定slide
          * @param  {Number} slideIndex   滑块索引，指定将要切换到的slide的索引
-         * @param  {Number} speed        是否恢复暂停，切换速度
+         * @param  {Number} speed        切换速度transition duration (in ms)
          * @param  {Boolen} runCallbacks 是否回调
-         * @param  {[type]} internal     [description]
-         * @return {[type]}              [description]
+         * @param  {Boolen} internal     内部优先
          */
         s.slideTo = function (slideIndex, speed, runCallbacks, internal) {
             if (typeof runCallbacks === 'undefined') runCallbacks = true;
             if (typeof slideIndex === 'undefined') slideIndex = 0;
             if (slideIndex < 0) slideIndex = 0;
-            // 向下取整
+            // 索引，向下取整
             s.snapIndex = Math.floor(slideIndex / s.params.slidesPerGroup);
             if (s.snapIndex >= s.snapGrid.length) s.snapIndex = s.snapGrid.length - 1;
             // 位移
             var translate = - s.snapGrid[s.snapIndex];
-            // Stop autoplay
+            // Stop autoplay 停止自动播放
             if (s.params.autoplay && s.autoplaying) {
                 // autoplayDisableOnInteraction用户操作swiper之后，是否禁止autoplay。默认为true：停止。
                 if (internal || !s.params.autoplayDisableOnInteraction) {
@@ -2320,6 +2386,8 @@
             s.updateProgress(translate);
 
             // Normalize slideIndex
+            // normalizeSlideIndex使你的活动块指示为最左边的那个slide（没开启centeredSlides时）
+            // http://www.swiper.com.cn/api/Controller/2016/1105/322.html
             if(s.params.normalizeSlideIndex){
                 for (var i = 0; i < s.slidesGrid.length; i++) {
                     if (- Math.floor(translate * 100) >= Math.floor(s.slidesGrid[i] * 100)) {
@@ -2328,7 +2396,7 @@
                 }
             }
 
-            // Directions locks
+            // Directions locks 方向锁
             if (!s.params.allowSwipeToNext && translate < s.translate && translate < s.minTranslate()) {
                 return false;
             }
@@ -2337,9 +2405,11 @@
             }
 
             // Update Index
+            // 滑动速度，即slider自动滑动开始到结束的时间（单位ms），也是触摸滑动时释放至贴合的时间
             if (typeof speed === 'undefined') speed = s.params.speed;
             s.previousIndex = s.activeIndex || 0;
             s.activeIndex = slideIndex;
+            // 更新真正的索引
             s.updateRealIndex();
             if ((s.rtl && -translate === s.translate) || (!s.rtl && translate === s.translate)) {
                 // Update Height
@@ -2353,6 +2423,8 @@
                 return false;
             }
             s.updateClasses();
+            // runCallbacksOnInit初始化时触发 [Transition/SlideChange] [Start/End] 回调函数。
+            // 这些回调函数会在下次初始化时被清除如果initialSlide不为0。
             s.onTransitionStart(runCallbacks);
 
             if (speed === 0) {
@@ -2375,13 +2447,13 @@
 
             return true;
         };
-
         s.onTransitionStart = function (runCallbacks) {
             if (typeof runCallbacks === 'undefined') runCallbacks = true;
             if (s.params.autoHeight) {
                 s.updateAutoHeight();
             }
             if (s.lazy) s.lazy.onTransitionStart();
+            // 触发回调
             if (runCallbacks) {
                 s.emit('onTransitionStart', s);
                 if (s.activeIndex !== s.previousIndex) {
@@ -2428,7 +2500,9 @@
                 var clientLeft = s.container[0].clientLeft;
                 return s.slideTo(s.activeIndex + s.params.slidesPerGroup, speed, runCallbacks, internal);
             }
-            else return s.slideTo(s.activeIndex + s.params.slidesPerGroup, speed, runCallbacks, internal);
+            else {
+                return s.slideTo(s.activeIndex + s.params.slidesPerGroup, speed, runCallbacks, internal);
+            }
         };
         s._slideNext = function (speed) {
             return s.slideNext(true, speed, true);
@@ -2461,19 +2535,14 @@
         /*=========================
           Translate/transition helpers 帮助类
           ===========================*/
-        s.setWrapperTransition = function (duration, byController) {
+        s.setWrapperTransition = function (duration) {
             s.wrapper.transition(duration);
             if (s.params.effect !== 'slide' && s.effects[s.params.effect]) {
                 s.effects[s.params.effect].setTransition(duration);
             }
-            if (s.params.parallax && s.parallax) {
-                s.parallax.setTransition(duration);
-            }
+
             if (s.params.scrollbar && s.scrollbar) {
                 s.scrollbar.setTransition(duration);
-            }
-            if (s.params.control && s.controller) {
-                s.controller.setTransition(duration, byController);
             }
             s.emit('onSetTransition', s, duration);
         };
@@ -2481,9 +2550,8 @@
          * [setWrapperTranslate description]
          * @param {Number} translate         位移量
          * @param {Boolen} updateActiveIndex 是否更新活动索引
-         * @param {[type]} byController      [description]
          */
-        s.setWrapperTranslate = function (translate, updateActiveIndex, byController) {
+        s.setWrapperTranslate = function (translate, updateActiveIndex) {
             var x = 0, y = 0, z = 0;
             if (s.isHorizontal()) {
                 x = s.rtl ? -translate : translate;
@@ -2527,17 +2595,18 @@
             if (s.params.scrollbar && s.scrollbar) {
                 s.scrollbar.setTranslate(s.translate);
             }
-            if (s.params.control && s.controller) {
-                s.controller.setTranslate(s.translate, byController);
-            }
+
             // 触发回调函数
             s.emit('onSetTranslate', s, s.translate);
         };
 
         s.getTranslate = function (el, axis) {
-            var matrix, curTransform, curStyle, transformMatrix;
+            var matrix; // 矩阵
+            var curTransform;
+            var curStyle;
+            var transformMatrix;
 
-            // automatic axis detection
+            // automatic axis detection 自动轴检测
             if (typeof axis === 'undefined') {
                 axis = 'x';
             }
@@ -2597,6 +2666,8 @@
 
         /*=========================
           Observer 监视器，观察者
+          启动动态检查器(OB/观众/观看者)，当改变swiper的样式（例如隐藏/显示）或者修改swiper的子元素时，自动初始化swiper。
+          默认false，不开启，可以使用update()方法更新。
           ===========================*/
         s.observers = [];
         // 初始化
@@ -2604,7 +2675,16 @@
             options = options || {};
             // create an observer instance
             // https://developer.mozilla.org/zh-CN/docs/Web/API/MutationObserver
-            // MutationObserver给开发者们提供了一种能在某个范围内的DOM树发生变化时作出适当反应的能力.
+            // MutationObserver变动观察器给开发者们提供了一种能在某个范围内的DOM树发生变化时作出适当反应的能力.
+            // childList：子元素的变动
+            // attributes：属性的变动
+            // characterData：节点内容或节点文本的变动
+            // subtree：所有下属节点（包括子节点和子节点的子节点）的变动
+            // 想要观察哪一种变动类型，就在option对象中指定它的值为true。需要注意的是，不能单独观察subtree变动，必须同时指定childList、attributes和characterData中的一种或多种。
+            // 除了变动类型，option对象还可以设定以下属性：
+            // attributeOldValue：值为true或者为false。如果为true，则表示需要记录变动前的属性值。
+            // characterDataOldValue：值为true或者为false。如果为true，则表示需要记录变动前的数据值。
+            // attributesFilter：值为一个数组，表示需要观察的特定属性（比如['class', 'str']）。
             var ObserverFunc = window.MutationObserver || window.WebkitMutationObserver;
             var observer = new ObserverFunc(function (mutations) {
                 mutations.forEach(function (mutation) {
@@ -2612,7 +2692,7 @@
                     s.emit('onObserverUpdate', s, mutation);
                 });
             });
-
+            // observer对象的observer方法
             observer.observe(target, {
                 attributes: typeof options.attributes === 'undefined' ? true : options.attributes,
                 childList: typeof options.childList === 'undefined' ? true : options.childList,
@@ -2622,6 +2702,7 @@
             s.observers.push(observer);
         }
         s.initObservers = function () {
+            // observeParents 将observe应用于Swiper的父元素。当Swiper的父元素变化时，例如window.resize，Swiper更新。
             if (s.params.observeParents) {
                 var containerParents = s.container.parents();
                 for (var i = 0; i < containerParents.length; i++) {
@@ -2637,6 +2718,7 @@
         };
         s.disconnectObservers = function () {
             for (var i = 0; i < s.observers.length; i++) {
+                // disconnect方法用来停止观察。发生相应变动时，不再调用回调函数。
                 s.observers[i].disconnect();
             }
             s.observers = [];
@@ -2689,6 +2771,7 @@
                 s.slideTo(oldIndex + s.loopedSlides, 0, false);
             }
         };
+        // 修正循环
         s.fixLoop = function () {
             var newIndex;
             //Fix For Negative Oversliding(负位)
@@ -2902,178 +2985,11 @@
                         });
                     }
                 }
-            },
-            cube: {
-                setTranslate: function () {
-                    var wrapperRotate = 0, cubeShadow;
-                    if (s.params.cube.shadow) {
-                        if (s.isHorizontal()) {
-                            cubeShadow = s.wrapper.find('.swiper-cube-shadow');
-                            if (cubeShadow.length === 0) {
-                                cubeShadow = $('<div class="swiper-cube-shadow"></div>');
-                                s.wrapper.append(cubeShadow);
-                            }
-                            cubeShadow.css({height: s.width + 'px'});
-                        }
-                        else {
-                            cubeShadow = s.container.find('.swiper-cube-shadow');
-                            if (cubeShadow.length === 0) {
-                                cubeShadow = $('<div class="swiper-cube-shadow"></div>');
-                                s.container.append(cubeShadow);
-                            }
-                        }
-                    }
-                    for (var i = 0; i < s.slides.length; i++) {
-                        var slide = s.slides.eq(i);
-                        var slideAngle = i * 90;
-                        var round = Math.floor(slideAngle / 360);
-                        if (s.rtl) {
-                            slideAngle = -slideAngle;
-                            round = Math.floor(-slideAngle / 360);
-                        }
-                        var progress = Math.max(Math.min(slide[0].progress, 1), -1);
-                        var tx = 0, ty = 0, tz = 0;
-                        if (i % 4 === 0) {
-                            tx = - round * 4 * s.size;
-                            tz = 0;
-                        }
-                        else if ((i - 1) % 4 === 0) {
-                            tx = 0;
-                            tz = - round * 4 * s.size;
-                        }
-                        else if ((i - 2) % 4 === 0) {
-                            tx = s.size + round * 4 * s.size;
-                            tz = s.size;
-                        }
-                        else if ((i - 3) % 4 === 0) {
-                            tx = - s.size;
-                            tz = 3 * s.size + s.size * 4 * round;
-                        }
-                        if (s.rtl) {
-                            tx = -tx;
-                        }
-
-                        if (!s.isHorizontal()) {
-                            ty = tx;
-                            tx = 0;
-                        }
-
-                        var transform = 'rotateX(' + (s.isHorizontal() ? 0 : -slideAngle) + 'deg) rotateY(' + (s.isHorizontal() ? slideAngle : 0) + 'deg) translate3d(' + tx + 'px, ' + ty + 'px, ' + tz + 'px)';
-                        if (progress <= 1 && progress > -1) {
-                            wrapperRotate = i * 90 + progress * 90;
-                            if (s.rtl) wrapperRotate = -i * 90 - progress * 90;
-                        }
-                        slide.transform(transform);
-                        if (s.params.cube.slideShadows) {
-                            //Set shadows
-                            var shadowBefore = s.isHorizontal() ? slide.find('.swiper-slide-shadow-left') : slide.find('.swiper-slide-shadow-top');
-                            var shadowAfter = s.isHorizontal() ? slide.find('.swiper-slide-shadow-right') : slide.find('.swiper-slide-shadow-bottom');
-                            if (shadowBefore.length === 0) {
-                                shadowBefore = $('<div class="swiper-slide-shadow-' + (s.isHorizontal() ? 'left' : 'top') + '"></div>');
-                                slide.append(shadowBefore);
-                            }
-                            if (shadowAfter.length === 0) {
-                                shadowAfter = $('<div class="swiper-slide-shadow-' + (s.isHorizontal() ? 'right' : 'bottom') + '"></div>');
-                                slide.append(shadowAfter);
-                            }
-                            if (shadowBefore.length) shadowBefore[0].style.opacity = Math.max(-progress, 0);
-                            if (shadowAfter.length) shadowAfter[0].style.opacity = Math.max(progress, 0);
-                        }
-                    }
-                    s.wrapper.css({
-                        '-webkit-transform-origin': '50% 50% -' + (s.size / 2) + 'px',
-                        '-moz-transform-origin': '50% 50% -' + (s.size / 2) + 'px',
-                        '-ms-transform-origin': '50% 50% -' + (s.size / 2) + 'px',
-                        'transform-origin': '50% 50% -' + (s.size / 2) + 'px'
-                    });
-
-                    if (s.params.cube.shadow) {
-                        if (s.isHorizontal()) {
-                            cubeShadow.transform('translate3d(0px, ' + (s.width / 2 + s.params.cube.shadowOffset) + 'px, ' + (-s.width / 2) + 'px) rotateX(90deg) rotateZ(0deg) scale(' + (s.params.cube.shadowScale) + ')');
-                        }
-                        else {
-                            var shadowAngle = Math.abs(wrapperRotate) - Math.floor(Math.abs(wrapperRotate) / 90) * 90;
-                            var multiplier = 1.5 - (Math.sin(shadowAngle * 2 * Math.PI / 360) / 2 + Math.cos(shadowAngle * 2 * Math.PI / 360) / 2);
-                            var scale1 = s.params.cube.shadowScale,
-                                scale2 = s.params.cube.shadowScale / multiplier,
-                                offset = s.params.cube.shadowOffset;
-                            cubeShadow.transform('scale3d(' + scale1 + ', 1, ' + scale2 + ') translate3d(0px, ' + (s.height / 2 + offset) + 'px, ' + (-s.height / 2 / scale2) + 'px) rotateX(-90deg)');
-                        }
-                    }
-                    var zFactor = (s.isSafari || s.isUiWebView) ? (-s.size / 2) : 0;
-                    s.wrapper.transform('translate3d(0px,0,' + zFactor + 'px) rotateX(' + (s.isHorizontal() ? 0 : wrapperRotate) + 'deg) rotateY(' + (s.isHorizontal() ? -wrapperRotate : 0) + 'deg)');
-                },
-                setTransition: function (duration) {
-                    s.slides.transition(duration).find('.swiper-slide-shadow-top, .swiper-slide-shadow-right, .swiper-slide-shadow-bottom, .swiper-slide-shadow-left').transition(duration);
-                    if (s.params.cube.shadow && !s.isHorizontal()) {
-                        s.container.find('.swiper-cube-shadow').transition(duration);
-                    }
-                }
-            },
-            coverflow: {
-                setTranslate: function () {
-                    var transform = s.translate;
-                    var center = s.isHorizontal() ? -transform + s.width / 2 : -transform + s.height / 2;
-                    var rotate = s.isHorizontal() ? s.params.coverflow.rotate: -s.params.coverflow.rotate;
-                    var translate = s.params.coverflow.depth;
-                    //Each slide offset from center
-                    for (var i = 0, length = s.slides.length; i < length; i++) {
-                        var slide = s.slides.eq(i);
-                        var slideSize = s.slidesSizesGrid[i];
-                        var slideOffset = slide[0].swiperSlideOffset;
-                        var offsetMultiplier = (center - slideOffset - slideSize / 2) / slideSize * s.params.coverflow.modifier;
-
-                        var rotateY = s.isHorizontal() ? rotate * offsetMultiplier : 0;
-                        var rotateX = s.isHorizontal() ? 0 : rotate * offsetMultiplier;
-                        // var rotateZ = 0
-                        var translateZ = -translate * Math.abs(offsetMultiplier);
-
-                        var translateY = s.isHorizontal() ? 0 : s.params.coverflow.stretch * (offsetMultiplier);
-                        var translateX = s.isHorizontal() ? s.params.coverflow.stretch * (offsetMultiplier) : 0;
-
-                        //Fix for ultra small values
-                        if (Math.abs(translateX) < 0.001) translateX = 0;
-                        if (Math.abs(translateY) < 0.001) translateY = 0;
-                        if (Math.abs(translateZ) < 0.001) translateZ = 0;
-                        if (Math.abs(rotateY) < 0.001) rotateY = 0;
-                        if (Math.abs(rotateX) < 0.001) rotateX = 0;
-
-                        var slideTransform = 'translate3d(' + translateX + 'px,' + translateY + 'px,' + translateZ + 'px)  rotateX(' + rotateX + 'deg) rotateY(' + rotateY + 'deg)';
-
-                        slide.transform(slideTransform);
-                        slide[0].style.zIndex = -Math.abs(Math.round(offsetMultiplier)) + 1;
-                        if (s.params.coverflow.slideShadows) {
-                            //Set shadows
-                            var shadowBefore = s.isHorizontal() ? slide.find('.swiper-slide-shadow-left') : slide.find('.swiper-slide-shadow-top');
-                            var shadowAfter = s.isHorizontal() ? slide.find('.swiper-slide-shadow-right') : slide.find('.swiper-slide-shadow-bottom');
-                            if (shadowBefore.length === 0) {
-                                shadowBefore = $('<div class="swiper-slide-shadow-' + (s.isHorizontal() ? 'left' : 'top') + '"></div>');
-                                slide.append(shadowBefore);
-                            }
-                            if (shadowAfter.length === 0) {
-                                shadowAfter = $('<div class="swiper-slide-shadow-' + (s.isHorizontal() ? 'right' : 'bottom') + '"></div>');
-                                slide.append(shadowAfter);
-                            }
-                            if (shadowBefore.length) shadowBefore[0].style.opacity = offsetMultiplier > 0 ? offsetMultiplier : 0;
-                            if (shadowAfter.length) shadowAfter[0].style.opacity = (-offsetMultiplier) > 0 ? -offsetMultiplier : 0;
-                        }
-                    }
-
-                    //Set correct perspective for IE10
-                    if (s.browser.ie) {
-                        var ws = s.wrapper[0].style;
-                        ws.perspectiveOrigin = center + 'px 50%';
-                    }
-                },
-                setTransition: function (duration) {
-                    s.slides.transition(duration).find('.swiper-slide-shadow-top, .swiper-slide-shadow-right, .swiper-slide-shadow-bottom, .swiper-slide-shadow-left').transition(duration);
-                }
             }
         };
 
-
         /*=========================
-          Images Lazy Loading
+          Images Lazy Loading 懒加载
           ===========================*/
         s.lazy = {
             initialImageLoaded: false,
@@ -3083,7 +2999,8 @@
                 if (s.slides.length === 0) return;
 
                 var slide = s.slides.eq(index);
-                var img = slide.find('.' + s.params.lazyLoadingClass + ':not(.' + s.params.lazyStatusLoadedClass + '):not(.' + s.params.lazyStatusLoadingClass + ')');
+                console.log(slide);
+                var img = slide.find('.' + s.params.lazyLoadingClass).not('.' + s.params.lazyStatusLoadedClass).not('.' + s.params.lazyStatusLoadingClass);
                 if (slide.hasClass(s.params.lazyLoadingClass) && !slide.hasClass(s.params.lazyStatusLoadedClass) && !slide.hasClass(s.params.lazyStatusLoadingClass)) {
                     img = img.add(slide[0]);
                 }
@@ -3197,7 +3114,6 @@
                 }
             }
         };
-
 
         /*=========================
           Scrollbar 滚动条
@@ -3409,122 +3325,6 @@
         };
 
 
-        /*=========================
-          Controller
-          ===========================*/
-        s.controller = {
-            LinearSpline: function (x, y) {
-                var binarySearch = (function() {
-                    var maxIndex, minIndex, guess;
-                    return function(array, val) {
-                        minIndex = -1;
-                        maxIndex = array.length;
-                        while (maxIndex - minIndex > 1)
-                            if (array[guess = maxIndex + minIndex >> 1] <= val) {
-                                minIndex = guess;
-                            } else {
-                                maxIndex = guess;
-                            }
-                        return maxIndex;
-                    };
-                })();
-                this.x = x;
-                this.y = y;
-                this.lastIndex = x.length - 1;
-                // Given an x value (x2), return the expected y2 value:
-                // (x1,y1) is the known point before given value,
-                // (x3,y3) is the known point after given value.
-                var i1, i3;
-                var l = this.x.length;
-
-                this.interpolate = function (x2) {
-                    if (!x2) return 0;
-
-                    // Get the indexes of x1 and x3 (the array indexes before and after given x2):
-                    i3 = binarySearch(this.x, x2);
-                    i1 = i3 - 1;
-
-                    // We have our indexes i1 & i3, so we can calculate already:
-                    // y2 := ((x2−x1) × (y3−y1)) ÷ (x3−x1) + y1
-                    return ((x2 - this.x[i1]) * (this.y[i3] - this.y[i1])) / (this.x[i3] - this.x[i1]) + this.y[i1];
-                };
-            },
-            //xxx: for now i will just save one spline function to to
-            getInterpolateFunction: function(c){
-                if(!s.controller.spline) s.controller.spline = s.params.loop ?
-                    new s.controller.LinearSpline(s.slidesGrid, c.slidesGrid) :
-                    new s.controller.LinearSpline(s.snapGrid, c.snapGrid);
-            },
-            setTranslate: function (translate, byController) {
-               var controlled = s.params.control;
-               var multiplier, controlledTranslate;
-               function setControlledTranslate(c) {
-                    // this will create an Interpolate function based on the snapGrids
-                    // x is the Grid of the scrolled scroller and y will be the controlled scroller
-                    // it makes sense to create this only once and recall it for the interpolation
-                    // the function does a lot of value caching for performance
-                    translate = c.rtl && c.params.direction === 'horizontal' ? -s.translate : s.translate;
-                    if (s.params.controlBy === 'slide') {
-                        s.controller.getInterpolateFunction(c);
-                        // i am not sure why the values have to be multiplicated this way, tried to invert the snapGrid
-                        // but it did not work out
-                        controlledTranslate = -s.controller.spline.interpolate(-translate);
-                    }
-
-                    if(!controlledTranslate || s.params.controlBy === 'container'){
-                        multiplier = (c.maxTranslate() - c.minTranslate()) / (s.maxTranslate() - s.minTranslate());
-                        controlledTranslate = (translate - s.minTranslate()) * multiplier + c.minTranslate();
-                    }
-
-                    if (s.params.controlInverse) {
-                        controlledTranslate = c.maxTranslate() - controlledTranslate;
-                    }
-                    c.updateProgress(controlledTranslate);
-                    c.setWrapperTranslate(controlledTranslate, false, s);
-                    c.updateActiveIndex();
-               }
-               if (Array.isArray(controlled)) {
-                   for (var i = 0; i < controlled.length; i++) {
-                       if (controlled[i] !== byController && controlled[i] instanceof Swiper) {
-                           setControlledTranslate(controlled[i]);
-                       }
-                   }
-               }
-               else if (controlled instanceof Swiper && byController !== controlled) {
-
-                   setControlledTranslate(controlled);
-               }
-            },
-            setTransition: function (duration, byController) {
-                var controlled = s.params.control;
-                var i;
-                function setControlledTransition(c) {
-                    c.setWrapperTransition(duration, s);
-                    if (duration !== 0) {
-                        c.onTransitionStart();
-                        c.wrapper.transitionEnd(function(){
-                            if (!controlled) return;
-                            if (c.params.loop && s.params.controlBy === 'slide') {
-                                c.fixLoop();
-                            }
-                            c.onTransitionEnd();
-
-                        });
-                    }
-                }
-                if (Array.isArray(controlled)) {
-                    for (i = 0; i < controlled.length; i++) {
-                        if (controlled[i] !== byController && controlled[i] instanceof Swiper) {
-                            setControlledTransition(controlled[i]);
-                        }
-                    }
-                }
-                else if (controlled instanceof Swiper && byController !== controlled) {
-                    setControlledTransition(controlled);
-                }
-            }
-        };
-
 
         /*=========================
           Hash Navigation
@@ -3580,6 +3380,8 @@
         s.history = {
             init: function () {
                 if (!s.params.history) return;
+                // https://developer.mozilla.org/zh-CN/docs/Web/API/Window/history
+                // 不支持history的改为hash的方式
                 if (!window.history || !window.history.pushState) {
                     s.params.history = false;
                     s.params.hashnav = true;
@@ -3598,6 +3400,8 @@
                 s.history.scrollToSlide(s.params.speed, s.history.paths.value, false);
             },
             getPathValues: function() {
+                // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/String/slice
+                // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/String/split
                 var pathArray = window.location.pathname.slice(1).split('/');
                 var total = pathArray.length;
                 var key = pathArray[total - 2];
@@ -3608,6 +3412,8 @@
                 if (!s.history.initialized || !s.params.history) return;
                 var slide = s.slides.eq(index);
                 var value = this.slugify(slide.attr('data-history'));
+                // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/String/includes
+                // es6语法 需要转换
                 if (!window.location.pathname.includes(key)) {
                     value = key + '/' + value;
                 }
@@ -3629,6 +3435,7 @@
                 if (value) {
                     for (var i = 0, length = s.slides.length; i < length; i++) {
                         var slide = s.slides.eq(i);
+                        // 使用history还必需在slide上增加一个属性data-history，例<div class="swiper-slide" data-history="slide1"></div>
                         var slideHistory = this.slugify(slide.attr('data-history'));
                         if (slideHistory === value && !slide.hasClass(s.params.slideDuplicateClass)) {
                             var index = slide.index();
@@ -3728,7 +3535,7 @@
           Init/Destroy 初始化/销毁
           ===========================*/
         s.init = function () {
-            // 如果开启循环模式，创建循环结构
+            // 如果开启循环模式，则创建循环结构
             if (s.params.loop) {
                 s.createLoop();
             }
@@ -3746,20 +3553,13 @@
                     s.scrollbar.enableDraggable();
                 }
             }
-            if (s.params.effect !== 'slide' && s.effects[s.params.effect]) {
-                if (!s.params.loop) {
-                    s.updateProgress();
-                }
-                s.effects[s.params.effect].setTranslate();
-            }
-            // 如果支持循环模式
+
             if (s.params.loop) {
                 s.slideTo(s.params.initialSlide + s.loopedSlides, 0, s.params.runCallbacksOnInit);
             }
             else {
                 s.slideTo(s.params.initialSlide, 0, s.params.runCallbacksOnInit);
                 if (s.params.initialSlide === 0) {
-                    if (s.parallax && s.params.parallax) s.parallax.setTranslate();
                     if (s.lazy && s.params.lazyLoading) {
                         s.lazy.load();
                         s.lazy.initialImageLoaded = true;
@@ -3775,29 +3575,18 @@
             if (s.params.preloadImages && !s.params.lazyLoading) {
                 s.preloadImages();
             }
-            if (s.params.zoom && s.zoom) {
-                s.zoom.init();
-            }
+            // 自动播放
             if (s.params.autoplay) {
                 s.startAutoplay();
             }
-            if (s.params.keyboardControl) {
-                if (s.enableKeyboardControl) s.enableKeyboardControl();
-            }
-            if (s.params.mousewheelControl) {
-                if (s.enableMousewheelControl) s.enableMousewheelControl();
-            }
-            // Deprecated hashnavReplaceState changed to replaceState for use in hashnav and history
-            if (s.params.hashnavReplaceState) {
-                s.params.replaceState = s.params.hashnavReplaceState;
-            }
+
             if (s.params.history) {
                 if (s.history) s.history.init();
             }
             if (s.params.hashnav) {
                 if (s.hashnav) s.hashnav.init();
             }
-            if (s.params.a11y && s.a11y) s.a11y.init();
+            // 回调函数
             s.emit('onInit', s);
         };
 
@@ -3911,7 +3700,7 @@
             };
         })(),
         /*==================================================
-        Feature Detection 功能检测
+        Feature Detection 功能检测探测
         ====================================================*/
         support: {
             transforms3d : (window.Modernizr && Modernizr.csstransforms3d === true) || (function () {
@@ -3920,6 +3709,7 @@
             })(),
 
             flexbox: (function () {
+                return false;
                 var div = document.createElement('div').style;
                 // 侧轴上的对齐方式 align-items、 -webkit-align-items、-webkit-box-align
                 // 伸缩流垂直方向 flex-direction、-webkit-box-direction、-webkit-box-orient
@@ -3981,7 +3771,9 @@
             return firstInstance;
         };
     }
-
+    /**
+     * 赋予dom类库一些swiper的特定功能
+     */
     if (domLib) {
         if (!('transitionEnd' in domLib.fn)) {
             domLib.fn.transitionEnd = function (callback) {
