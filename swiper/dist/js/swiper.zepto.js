@@ -6,6 +6,10 @@
  * 特别点：passiveListener提升页面滑动的流畅度
  * 由于flex-wrap的兼容局限性，不支持多行
  * 由于flex-shrink的兼容局限性，无法使用
+ * 已经增加的功能:
+ * 1.防止new多次
+ * 2.resize校对
+ * 3.只有一张轮播图时不生成循环createloop
  */
 (function () {
     'use strict';
@@ -18,7 +22,28 @@
         // https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Operators/instanceof
         // instanceof 运算符用来检测 constructor.prototype 是否存在于参数 object 的原型链上
         // object instanceof constructor
+        // console.log(this);
         if (!(this instanceof Swiper)) return new Swiper(container, params);
+
+        // Swiper 简写
+        var s = this;
+
+        s.container = $(container); // 传入的container容器元素
+        if (s.container.length === 0) return;
+        // 防止new多次
+        if (s.container.length === 1 && s.container.data('swiper')) return;
+        if (s.container.length > 1) {
+            var swipers = [];
+            s.container.each(function () {
+                var container = this;
+                swipers.push(new Swiper(this, params));
+            });
+            return swipers;
+        }
+
+        // Save instance in container HTML Element and in data
+        s.container[0].swiper = s;
+        s.container.data('swiper', 1);
 
         // 默认配置项
         var defaults = {
@@ -449,9 +474,6 @@
             }
         }
 
-        // Swiper 简写
-        var s = this;
-
         // Params 填补了未传参默认项的所有参数
         s.params = params;
         // 原始所传参数，没有填补未传参默认项
@@ -544,20 +566,7 @@
         /*=========================
           Preparation - Define Container, Wrapper and Pagination 准备阶段
           ===========================*/
-        s.container = $(container); // 传入的container容器元素
-        if (s.container.length === 0) return;
-        if (s.container.length > 1) {
-            var swipers = [];
-            s.container.each(function () {
-                var container = this;
-                swipers.push(new Swiper(this, params));
-            });
-            return swipers;
-        }
 
-        // Save instance in container HTML Element and in data
-        s.container[0].swiper = s;
-        s.container.data('swiper', s);
 
         s.classNames.push(s.params.containerModifierClass + s.params.direction);
         // free模式，惯性模式
@@ -2733,6 +2742,13 @@
             s.wrapper.children('.' + s.params.slideClass + '.' + s.params.slideDuplicateClass).remove();
             // 获取所有的滑块
             var slides = s.wrapper.children('.' + s.params.slideClass);
+
+            // 单张滑块不轮播
+            if(slides.length == 1) {
+                // s.params.loop = false; 这样会造成多图和单图并存时造成循环都为false，待究原因
+                return;
+            }
+
             // 在loop模式下使用slidesPerview:'auto',还需使用该参数设置所要用到的loop个数。
             if(s.params.slidesPerView === 'auto' && !s.params.loopedSlides) s.params.loopedSlides = slides.length;
             // 在loop模式下使用slidesPerview:'auto',还需使用该参数设置所要用到的loop个数，默认传参为null取slidersPerView的个数
